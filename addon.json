@@ -1,0 +1,12 @@
+{
+	"title"		:	"Sacrifun",
+	"type"		:	"gamemode",
+	"tags"		:	[ "fun", "comic" ],
+	"ignore"	:
+	[
+		"*.psd",
+		"*.vcproj",
+		"*.svn*",
+		"*.git*"
+	]
+}

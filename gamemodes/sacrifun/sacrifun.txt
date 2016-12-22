@@ -1,0 +1,15 @@
+sacrifun
+{
+	"base"		"base"
+	"title"		"Sacrifun"
+	"maps"		""
+	"menusystem"	"1"
+	
+		"settings"
+	{
+		
+
+
+	}
+}
+
