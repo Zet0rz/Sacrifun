@@ -21,7 +21,11 @@ include("blinding.lua")
 include("blindphase_props.lua")
 
 function GM:GetFallDamage(ply, speed)
-	return speed/10
+	if IsValid(ply:GetCarryingPlayer()) then
+		return 0
+	else
+		return speed/15
+	end
 end
 
 function GM:PlayerSpawn(ply)
@@ -62,9 +66,9 @@ function GM:PlayerSetHandsModel( ply, ent )
 
 end
 
---function GM:PlayerDeathThink(ply)
-	
---end
+function GM:PlayerDeathThink(ply)
+	if ply:IsKiller() then return ply:KeyDown(IN_ATTACK) end
+end
 
 function GM:CanPlayerSuicide(ply)
 	if ply:IsSkeleton() then

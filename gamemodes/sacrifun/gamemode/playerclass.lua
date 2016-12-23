@@ -3,8 +3,8 @@ DEFINE_BASECLASS( "player_default" )
 local runspeed = 300
 local walkspeed = 200
 
-local killerrun = 350
-local killerwalk = 225
+local killerrun = 320
+local killerwalk = 210
 
 local PLAYER_RUNNER = {}
 
@@ -218,7 +218,7 @@ function PLAYER_SKELETON:SetModel()
 end
 
 function PLAYER_SKELETON:GetHandsModel()
-	return { model = "models/player/vengeance/skeleton_with_hands/c_arms_skully.mdl", skin = 0, body = "0000000" }
+	--return { model = "models/player/vengeance/skeleton_with_hands/c_arms_skully.mdl", skin = 0, body = "0000000" }
 end
 
 player_manager.RegisterClass( "sfun_playerclass_skeleton", PLAYER_SKELETON, "player_default" )

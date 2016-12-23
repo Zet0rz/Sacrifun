@@ -1,5 +1,5 @@
 
-local blindtime = 5 -- Time you stay blinded
+local blindtime = 3 -- Time you stay blinded
 local blindbuild = 0.65 -- Time it takes to fully blind
 local blindrecover = 0.5 -- Time after you stop getting flashed to recover
 

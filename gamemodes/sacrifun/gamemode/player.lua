@@ -520,7 +520,7 @@ end
 
 -- Bone stuff (killer resize)
 function meta:KillerScale()
-	self:SetModelScale(1.2)
+	self:SetModelScale(1)
 end
 
 function meta:ResetScale()

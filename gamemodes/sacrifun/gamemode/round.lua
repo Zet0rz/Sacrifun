@@ -83,7 +83,7 @@ if SERVER then
 			local time = CurTime() + 5
 			hook.Add("Think", "sfun_roundover", function()
 				if CurTime() > time then
-					--RoundRestart()
+					RoundRestart()
 					hook.Remove("Think", "sfun_roundover")
 				end
 			end)

@@ -31,7 +31,7 @@ function GM:EntityTakeDamage(ply, dmginfo)
 	local pteam = ply:Team()
 	if pteam == 2 then return true end -- Only runner damage!
 	
-	if dmginfo:GetDamageType() == DMG_CRUSH then dmginfo:ScaleDamage(0.1) end
+	if dmginfo:GetDamageType() == DMG_CRUSH then dmginfo:ScaleDamage(0.01) end
 	
 	local dmg = dmginfo:GetDamage()
 	if pteam == 1 then
@@ -77,7 +77,7 @@ function GM:PlayerPostThink(ply)
 end
 
 local function NoClipTest( ply )
-	return true
+	return false
 end
 hook.Add( "PlayerNoClip", "NoClipTest", NoClipTest )
 

@@ -6,7 +6,7 @@ local meta = FindMetaTable("Player")
 if SERVER then
 	hook.Add("PlayerButtonDown", "sacrifun_sense", function(ply, key)
 		if key == clonekey then
-			if ply.Props[1] then -- If we have props (only in prep phase unless lua hacked in)
+			if ply.Props and ply.Props[1] then -- If we have props (only in prep phase unless lua hacked in)
 				ply:CreateProp()
 			else
 				ply:ToggleClone()
@@ -21,6 +21,7 @@ if SERVER then
 		if IsValid(clone) then
 			self:EndClone(replace)
 		else
+			if not self:IsRunner() then return end
 			local clonenum = self:GetCloneNumber()
 			if self:GetAdrenaline() <= 0 and clonenum > 1 then
 				self:SetCloneNumber(clonenum - 1)

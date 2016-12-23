@@ -59,6 +59,7 @@ local swingsound = Sound( "Weapon_Crowbar.Single" )
 local hitsound = Sound( "Weapon_Crowbar.Melee_Hit" )
 function SWEP:PrimaryAttack()
 	local ply = self.Owner
+	ply:LagCompensation(true)
 	
 	local tr = util.TraceHull({
 		start = ply:GetShootPos(),
@@ -113,6 +114,8 @@ function SWEP:PrimaryAttack()
 			self.Owner:SlowDown(1)
 		end
 	end
+	
+	ply:LagCompensation(false)
 	
 end
 
@@ -316,6 +319,6 @@ function SWEP:ReleaseObject()
 	self.NextIdleTime = 0
 	self:SetActionLocked(false)
 	
-	if SERVER thenself.Owner:SetRunSpeed(350)
+	self.Owner:SetRunSpeed(350)
 	self.Owner:SetWalkSpeed(225)
 end

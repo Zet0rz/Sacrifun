@@ -242,6 +242,7 @@ local huds = {
 
 local hudteam = IsValid(LocalPlayer()) and LocalPlayer():Team() or 1
 hook.Add("HUDPaint", "sacrifun_hud", function()
+	if IsValid(LocalPlayer()) then hudteam = LocalPlayer():Team() end
 	huds[hudteam]()
 end)
 function sfun_SetTeamHUD(num)

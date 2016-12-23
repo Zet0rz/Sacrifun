@@ -133,6 +133,28 @@ local secondaryacts = {
 			ent:SetKeyValue("speed", ent.OriginalDoorSpeed or "100")
 		end
 	end,
+	["func_door_rotating"] = function(ply, ent, sprint)
+		if sprint then
+			ent:SetKeyValue("speed", "1000")
+		else
+			ent:SetKeyValue("speed", ent.OriginalDoorSpeed or "100")
+		end
+		ent:Use(ply, ply, SIMPLE_USE, 1)
+		if sprint then
+			
+			ent.SlamShutTime = CurTime() + 0.5 -- Won't be openable for this amount of time!
+			ply:SetCarriedObject(ent)
+			ply:CollisionRulesChanged()
+			timer.Simple(1, function()
+				if IsValid(ply) then
+					ply:SetCarriedObject(nil)
+					ply:CollisionRulesChanged()
+				end
+			end)
+		else
+			ent:SetKeyValue("speed", ent.OriginalDoorSpeed or "100")
+		end
+	end,
 }
 
 function SWEP:SecondaryAttack()
@@ -211,7 +233,6 @@ function SWEP:Think()
 		if not self.NextHealSound or ct > self.NextHealSound then
 			local sound = table.Random(healsounds)
 			self.Owner:EmitSound(sound)
-			print("Sounded", sound)
 			self.NextHealSound = ct + math.Rand(0.5,1)
 		end
 		
@@ -372,11 +393,13 @@ end
 -- Non-sprinting (normal pickup)
 local validpicks = {
 	["prop_physics"] = true,
+	["prop_physics_multiplayer"] = true,
 	["sacrifun_door"] = true,
 }
 -- Sprinting (nocollided short duration pickup)
 local validsprints = {
 	["prop_physics"] = true,
+	["prop_physics_multiplayer"] = true,
 	["player"] = true,
 	["sacrifun_door"] = true,
 }
@@ -560,14 +583,17 @@ function SWEP:Tackle(ent, tr)
 	if SERVER then
 		self.Owner:SlowDown(1)
 		if IsValid(ent) then
+			local class = ent:GetClass()
 			if ent:IsPlayer() then
 				if self.CanTacklePlayers and not ent:IsKiller() then
 					ent:Stun(3)
 				end
-			elseif ent:GetClass() == "prop_door_rotating" then
+			elseif class == "prop_door_rotating" then
 				ent:Use(ply, ply, SIMPLE_USE, 1)
 				ent:SetKeyValue("speed", "1000")
 				ent.SlamShutTime = CurTime() + 0.5 -- Won't be openable for this amount of time!
+			elseif class == "func_breakable" then
+				ent:Fire("Break")
 			else
 				local phys = ent:GetPhysicsObject()
 				if IsValid(phys) then
