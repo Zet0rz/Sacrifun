@@ -33,6 +33,7 @@ if SERVER then
 	
 	function meta:StartClone()
 		if self:GetAdrenaline() <= 0 or not self:IsRunner() then return end
+		if not self:Alive() then return end
 		local clone = ents.Create("sacrifun_clone")
 		clone:SetPos(self:GetPos())
 		clone.PlayerEyeAngles = self:EyeAngles()
@@ -54,10 +55,6 @@ if SERVER then
 		end
 		clone:Remove()
 		self.Clone = nil
-		
-		net.Start("sfun_cloneoverlay")
-			net.WriteBool(false)
-		net.Send(self)
 		
 		local clonenum = self:GetCloneNumber()
 		if self:GetAdrenaline() <= 0 and clonenum > 0 then

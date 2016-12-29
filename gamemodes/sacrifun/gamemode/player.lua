@@ -9,7 +9,6 @@ if SERVER then
 		player_manager.RunClass(self, "Loadout")
 		--hook.Run("sfun_UpdateTeamStatus")
 		self.PlayerSetUp = true
-		self:ResetScale()
 	end
 	
 	function meta:SetKiller()
@@ -20,7 +19,6 @@ if SERVER then
 		player_manager.RunClass(self, "Loadout")
 		--hook.Run("sfun_UpdateTeamStatus")
 		self.PlayerSetUp = true
-		self:KillerScale()
 	end
 	
 	function meta:SetSkeleton()
@@ -32,17 +30,21 @@ if SERVER then
 		self:SetModel("models/player/skeleton.mdl")
 		hook.Run("sfun_UpdateTeamStatus")
 		self.PlayerSetUp = true
-		self:ResetScale()
 	end
 	
 	local sprintspeed = 450
-	function meta:SprintBurst(time)
+	function meta:SprintBurst(time, collide)
 		time = time or 3
 		
 		-- Handled in the player's move class
 		if not self.SpeedModTime or self.SpeedModTime - CurTime() < time then
 			self.SpeedModTime = CurTime() + time
 			self:SetRunSpeed(sprintspeed)
+		end
+		if not collide then
+			self:SetCollisionGroup(COLLISION_GROUP_WEAPON)
+		else -- Overwrite regardless of time
+			self:SetCollisionGroup(COLLISION_GROUP_PLAYER)
 		end
 	end
 	
@@ -107,14 +109,14 @@ if SERVER then
 			bp:SetPlayer(self)
 			bp:SetRebuildDelay(5)
 			self.BonePile = bp
-			
-			self:SetNoDraw(true)
 			self:Kill()
 		else
+			local ct = CurTime()
 			time = time or 1
 			-- Handled in the player's move class
-			if not self.StunTime or self.StunTime - CurTime() < time then
-				self.StunTime = CurTime() + time
+			if not self.StunTime or self.StunTime - ct < time then
+				self.StunTime = ct + time
+				self.StunImmunity = self.StunTime + 3
 			end
 			
 			net.Start("sfun_PlayerStun")
@@ -127,10 +129,12 @@ if SERVER then
 		local mindist = math.huge
 		local ply
 		for k,v in pairs(team.GetPlayers(1)) do
-			local dist = v:GetPos():DistToSqr(self:GetPos())
-			if dist < mindist then
-				mindist = dist
-				ply = v
+			if v != self then
+				local dist = v:GetPos():DistToSqr(self:GetPos())
+				if dist < mindist then
+					mindist = dist
+					ply = v
+				end
 			end
 		end
 		
@@ -145,6 +149,13 @@ if SERVER then
 		end
 	end
 	
+	util.AddNetworkString("sfun_PlayerAnims")
+	function meta:SendAnimationEvent(data)
+		net.Start("sfun_PlayerAnims")
+			net.WriteUInt(data, 4)
+			net.WriteEntity(self)
+		net.Broadcast()
+	end
 	
 else
 
@@ -289,6 +300,13 @@ else
 
 			return view
 		end)
+	end)
+	
+	net.Receive("sfun_PlayerAnims", function()
+		local anim = net.ReadUInt(4)
+		local ply = net.ReadEntity()
+		
+		ply:DoAnimationEvent(anim)
 	end)
 end
 
@@ -516,13 +534,4 @@ function meta:Taunt(event)
 	
 	self:EmitSound(sound, 75, 100)
 	return SoundDuration(sound)
-end
-
--- Bone stuff (killer resize)
-function meta:KillerScale()
-	self:SetModelScale(1)
-end
-
-function meta:ResetScale()
-	self:SetModelScale(1)
 end

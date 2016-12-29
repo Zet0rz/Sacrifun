@@ -18,12 +18,12 @@ if SERVER then
 
 	hook.Add("Think", "sacrifun_sense", function()
 		for k,v in pairs(player.GetAll()) do
-			local adr = v:GetAdrenaline()
 			local sensecooldown = v.SenseCooldown or 0
 			if v:GetIsSensing() then
 				if sensecooldown <= 0 then
 					v.SenseCooldown = 1
 					v:SensePing()
+					--v:AttemptHealthSteal()
 				end
 				if sensecooldown > 0 then
 					v.SenseCooldown = math.Clamp(sensecooldown - cooldownspeed*FrameTime(), 0, 1)

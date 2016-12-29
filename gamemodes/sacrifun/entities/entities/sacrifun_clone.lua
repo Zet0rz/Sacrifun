@@ -85,3 +85,12 @@ function ENT:OnTakeDamage(dmginfo)
 	ply:TakeDamageInfo(dmginfo)
 	ply.CLONEDMG = nil
 end
+
+function ENT:OnRemove()
+	local ply = self:GetPlayerOwner()
+	if IsValid(ply) then
+		net.Start("sfun_cloneoverlay")
+			net.WriteBool(false)
+		net.Send(ply)
+	end
+end

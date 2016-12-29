@@ -184,12 +184,16 @@ function ENT:Think()
 			self.Rebuilding = nil
 			local ply = self:GetPlayer()
 			if IsValid(ply) then
-				if not ply:IsSkeleton() then ply:SetSkeleton() end
-				ply:Spawn()
-				local rew = ply:GetResponsibleRunner()
-				if IsValid(rew) and rew:IsRunner() then
-					rew:GiveClone()
+				if not ply:IsSkeleton() then -- Converted for the first time
+					local rew = ply:GetResponsibleRunner()
+					print(rew)
+					if IsValid(rew) and rew:IsRunner() then
+						rew:GiveClone() -- Give reward
+						rew:AddFrags(1)
+					end
+					ply:SetSkeleton()
 				end
+				ply:Spawn()
 				self:Remove()
 			end
 			for k,v in pairs(self.Bones) do

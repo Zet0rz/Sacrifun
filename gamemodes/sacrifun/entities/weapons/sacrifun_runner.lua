@@ -24,7 +24,7 @@ SWEP.Instructions	= "Let the gamemode give you it"
 SWEP.Spawnable			= false
 SWEP.AdminSpawnable		= false
 
-SWEP.HoldType = "slam"
+SWEP.HoldType = "normal"
 
 SWEP.ViewModel	= "models/weapons/c_sacrifun_arms.mdl"
 SWEP.WorldModel	= ""
@@ -326,6 +326,7 @@ function SWEP:Think()
 					if not self.Sensing then
 						self.Owner:StartSensing()
 						self.Sensing = true
+						self.NextSenseSteal = ct + 0.2
 					end
 				elseif self.Sensing then
 					self.Owner:EndSensing()
@@ -342,6 +343,11 @@ function SWEP:Think()
 				self.Sensing = false
 			end
 		end
+	end
+	
+	if self.Sensing and self.NextSenseSteal < ct then
+		self.Owner:AttemptHealthSteal()
+		self.NextSenseSteal = ct + 0.5
 	end
 end
 
@@ -428,7 +434,7 @@ function SWEP:PickupObject(ent, sprint, tr)
 			
 			if allow then
 				time = time or 0.25
-				if ent:IsPlayer() and issprinting and not IsValid(ent:GetCarryingPlayer()) and ent:GetAimVector():Dot(self.Owner:GetAimVector()) > 0 then
+				if ent:IsPlayer() and issprinting and not IsValid(ent:GetCarryingPlayer()) and ent.GrabImmunity < CurTime() then --and ent:GetAimVector():Dot(self.Owner:GetAimVector()) > 0 then
 					self.Owner:SetCarriedObject(ent)
 					ent:SetCarryingPlayer(self.Owner)
 					self.Owner:CollisionRulesChanged()
@@ -486,8 +492,11 @@ function SWEP:PickupObject(ent, sprint, tr)
 						self.NextDrop = CurTime() + time
 						self.Owner:AnimRestartGesture(GESTURE_SLOT_ATTACK_AND_RELOAD, ACT_GMOD_GESTURE_RANGE_ZOMBIE, true)
 						self:SendWeaponAnim(ACT_VM_PULLBACK)
+						self.Owner:DoAnimationEvent(4)
+						self.Owner:SendAnimationEvent(4)
 					else
 						self:SendWeaponAnim(ACT_VM_SECONDARYATTACK)
+						self:SetHoldType("grenade")
 						self.NextIdleTime = nil
 					end
 					
@@ -513,9 +522,9 @@ function SWEP:ReleaseObject()
 	if IsValid(ent) then
 		if ent:IsPlayer() then
 			ent:SetCarryingPlayer(nil)
+			ent.GrabImmunity = CurTime() + 1 -- Immune to grab and fall damage for 1 sec!
 			
-			self.Owner:SetCarriedObject(nil)
-			self.Owner:CollisionRulesChanged()
+			self.Owner:CollideWhenPossible()
 		else
 			local phys = ent:GetPhysicsObject()
 			if self.CarryShadow then
@@ -526,8 +535,7 @@ function SWEP:ReleaseObject()
 			self.Owner:DropObject()
 			ent:GetPhysicsObject():ClearGameFlag(FVPHYSICS_PLAYER_HELD)
 			ent.CarryingWep = nil
-			self.Owner:SetCarriedObject(nil)
-			self.Owner:CollisionRulesChanged()
+			self.Owner:CollideWhenPossible()
 			
 			if IsValid(phys) then phys:Wake() end
 			
@@ -543,6 +551,7 @@ function SWEP:ReleaseObject()
 	if IsValid(self.Constr) then self.Constr:Remove() end
 	
 	self.NextIdleTime = 0
+	self:SetHoldType("normal")
 end
 
 function SWEP:Push(ent, tr)
@@ -550,6 +559,10 @@ function SWEP:Push(ent, tr)
 	self:SendWeaponAnim(ACT_VM_PRIMARYATTACK)
 	self.NextIdleTime = CurTime() + 0.25
 	self:SetActionLocked(true)
+	if SERVER then
+		self.Owner:DoAnimationEvent(1)
+		self.Owner:SendAnimationEvent(1)
+	end
 
 	if IsValid(ent) then
 		local phys = ent:GetPhysicsObject()
@@ -581,11 +594,13 @@ function SWEP:Tackle(ent, tr)
 	end
 
 	if SERVER then
+		self.Owner:DoAnimationEvent(2)
+		self.Owner:SendAnimationEvent(2)
 		self.Owner:SlowDown(1)
 		if IsValid(ent) then
 			local class = ent:GetClass()
 			if ent:IsPlayer() then
-				if self.CanTacklePlayers and not ent:IsKiller() then
+				if self.CanTacklePlayers and not ent:IsKiller() and ent.StunImmunity < CurTime() then
 					ent:Stun(3)
 				end
 			elseif class == "prop_door_rotating" then
@@ -617,6 +632,7 @@ function SWEP:StartHeal()
 	self:SetCycle(0)
 	self.HealTime = CurTime() + 0.5
 	self:SetActionLocked(true)
+	self:SetHoldType("slam")
 end
 
 function SWEP:EndHeal()
@@ -624,6 +640,7 @@ function SWEP:EndHeal()
 	self.NextIdleTime = CurTime() + 1
 	self.HealTime = nil
 	self.Healing = nil
+	self:SetHoldType("normal")
 end
 
 function SWEP:StartFlash()
@@ -643,6 +660,7 @@ function SWEP:StartFlash()
 	end
 	
 	self.FlashOn = true
+	self:SetHoldType("pistol")
 	
 end
 
@@ -660,6 +678,7 @@ function SWEP:EndFlash()
 	
 	self.FlashOn = false
 	self.NextIdleTime = 0
+	self:SetHoldType("normal")
 end
 
 function SWEP:Reload()

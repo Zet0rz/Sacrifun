@@ -15,7 +15,6 @@ function PLAYER_RUNNER:SetupDataTables()
 	self.Player:NetworkVar("Entity", 0, "CarryingPlayer")
 	self.Player:NetworkVar("Entity", 1, "CarriedObject")
 	self.Player:NetworkVar("Bool", 0, "IsSensing")
-	--self.Player:NetworkVar("Bool", 1, "AdrenalineSensing")
 	
 	-- Setting starting variables here as these NetworkVars aren't created when the player is initially spawning
 	if SERVER then
@@ -24,7 +23,6 @@ function PLAYER_RUNNER:SetupDataTables()
 		self.Player:SetAdrenaline(0)
 		self.Player:SetCloneNumber(0)
 		self.Player:SetIsSensing(false)
-		--self.Player:SetAdrenalineSensing(false)
 	end
 
 end
@@ -40,21 +38,21 @@ function PLAYER_RUNNER:Init()
 end
 
 local playermodels = {
-"models/player/group01/female_01.mdl",
-"models/player/group01/female_02.mdl",
-"models/player/group01/female_03.mdl",
-"models/player/group01/female_04.mdl",
-"models/player/group01/female_05.mdl",
-"models/player/group01/female_06.mdl",
-"models/player/group01/male_01.mdl",
-"models/player/group01/male_02.mdl",
-"models/player/group01/male_03.mdl",
-"models/player/group01/male_04.mdl",
-"models/player/group01/male_05.mdl",
-"models/player/group01/male_06.mdl",
-"models/player/group01/male_07.mdl",
-"models/player/group01/male_08.mdl",
-"models/player/group01/male_09.mdl"
+	"models/player/group01/female_01.mdl",
+	"models/player/group01/female_02.mdl",
+	"models/player/group01/female_03.mdl",
+	"models/player/group01/female_04.mdl",
+	"models/player/group01/female_05.mdl",
+	"models/player/group01/female_06.mdl",
+	"models/player/group01/male_01.mdl",
+	"models/player/group01/male_02.mdl",
+	"models/player/group01/male_03.mdl",
+	"models/player/group01/male_04.mdl",
+	"models/player/group01/male_05.mdl",
+	"models/player/group01/male_06.mdl",
+	"models/player/group01/male_07.mdl",
+	"models/player/group01/male_08.mdl",
+	"models/player/group01/male_09.mdl"
 }
 
 function PLAYER_RUNNER:SetModel()
@@ -97,6 +95,7 @@ function PLAYER_RUNNER:Move(mv)
 		ply:SetRunSpeed(runspeed)
 		ply:SetWalkSpeed(walkspeed)
 		ply.SpeedModTime = nil
+		ply.SprintNoCollide = nil
 	end
 end
 
@@ -108,18 +107,13 @@ function PLAYER_KILLER:SetupDataTables()
 
 	self.Player:NetworkVar("Int", 0, "Adrenaline")
 	self.Player:NetworkVar("Int", 1, "CloneNumber")
-	--self.Player:NetworkVar("Bool", 0, "IsSensing")
-	--self.Player:NetworkVar("Bool", 1, "AdrenalineSensing")
 	self.Player:NetworkVar("Entity", 0, "CarryingPlayer")
 	self.Player:NetworkVar("Entity", 1, "CarriedObject")
 	
-	-- Setting starting variables here as these NetworkVars aren't created when the player is initially spawning
 	if SERVER then
 		self.Player:SetCarryingPlayer(nil)
 		self.Player:SetAdrenaline(0)
 		self.Player:SetCloneNumber(0)
-		--self.Player:SetIsSensing(false)
-		--self.Player:SetAdrenalineSensing(false)
 	end
 
 end
@@ -151,6 +145,7 @@ function PLAYER_KILLER:Move(mv)
 		ply:SetRunSpeed(killerrun)
 		ply:SetWalkSpeed(killerwalk)
 		ply.SpeedModTime = nil
+		ply.SprintNoCollide = nil
 	end
 end
 
@@ -160,20 +155,11 @@ local PLAYER_SKELETON = {}
 
 function PLAYER_SKELETON:SetupDataTables()
 
-	--self.Player:NetworkVar("Int", 0, "Adrenaline")
-	--self.Player:NetworkVar("Int", 1, "CloneNumber")
-	--self.Player:NetworkVar("Bool", 0, "IsSensing")
-	--self.Player:NetworkVar("Bool", 1, "AdrenalineSensing")
 	self.Player:NetworkVar("Entity", 0, "CarryingPlayer")
 	self.Player:NetworkVar("Entity", 1, "CarriedObject")
 	
-	-- Setting starting variables here as these NetworkVars aren't created when the player is initially spawning
 	if SERVER then
 		self.Player:SetCarryingPlayer(nil)
-		--self.Player:SetAdrenaline(100)
-		--self.Player:SetCloneNumber(0)
-		--self.Player:SetIsSensing(false)
-		--self.Player:SetAdrenalineSensing(false)
 	end
 
 end
@@ -204,6 +190,7 @@ function PLAYER_SKELETON:Move(mv)
 		ply:SetRunSpeed(runspeed)
 		ply:SetWalkSpeed(walkspeed)
 		ply.SpeedModTime = nil
+		ply.SprintNoCollide = nil
 	end
 end
 

@@ -275,3 +275,59 @@ hook.Add("CalcViewModelView", "sacrifun_View", function(wep, vm, opos, oang, pos
 		return pos + add, ang
 	end
 end)
+
+-- Scale killer sizes
+local scale = Matrix()
+scale:Scale(Vector(1.2,1.2,1.2))
+hook.Add("PrePlayerDraw", "sacrifun_playerscale", function(ply)
+	if ply:IsKiller() and not ply.IsKillerScaled then
+		ply:EnableMatrix("RenderMultiply", scale)
+		ply.IsKillerScaled = true
+	elseif ply.IsKillerScaled and not ply:IsKiller() then
+		ply:DisableMatrix("RenderMultiply")
+		ply.IsKillerScaled = false
+	end
+end)
+
+-- Target ID Health bars
+local hudavatar = vgui.Create("AvatarImage")
+hudavatar:SetPaintedManually(true)
+hudavatar:SetSize(64,64)
+
+local targetply
+function GM:HUDDrawTargetID()
+	local tr = LocalPlayer():GetEyeTrace()
+	if not tr.Hit then targetply = nil return end
+	if not tr.HitNonWorld then targetply = nil return end
+	
+	local ent = tr.Entity
+	if not ent:IsPlayer() then targetply = nil return end
+	
+	if not IsValid(targetply) then
+		targetply = ent
+		targettime = CurTime() + 0.25 -- The delay for the text to show up
+	end
+	
+	local x = ScrW()/2 - 100
+	local y = ScrH()/2 + 100
+	
+	if CurTime() >= targettime then
+		if hudavatar.Player != targetply then
+			hudavatar:SetPlayer(targetply, 64)
+			hudavatar.Player = targetply
+			hudavatar:SetPos(x - 60,y - 35)
+		end
+		
+		local healthpct = targetply:Health()/100
+		surface.SetDrawColor(50,50,50,150)
+		surface.SetMaterial(mat_bar)
+		surface.DrawTexturedRectUV(x, y, 300, 20, 0, 0, 1, 1)
+		
+		surface.SetDrawColor(255,125,125)
+		surface.DrawTexturedRectUV(x - 4, y + 2, 300*healthpct, 16, 1-healthpct, 0.1, 1, 0.9)
+		
+		draw.SimpleTextOutlined(targetply:Nick(), "DermaLarge", x + 10, y - 15, color_white, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER, 2, color_black)
+		
+		hudavatar:PaintManual()
+	end
+end

@@ -1,4 +1,4 @@
-GM.Name = "base"
+GM.Name = "Sacrifun"
 GM.Author = "Zet0r"
 GM.Email = "N/A"
 GM.Website = "https://youtube.com/Zet0r"
@@ -31,6 +31,8 @@ function GM:EntityTakeDamage(ply, dmginfo)
 	local pteam = ply:Team()
 	if pteam == 2 then return true end -- Only runner damage!
 	
+	local attacker = dmginfo:GetAttacker()
+	
 	if dmginfo:GetDamageType() == DMG_CRUSH then dmginfo:ScaleDamage(0.01) end
 	
 	local dmg = dmginfo:GetDamage()
@@ -41,6 +43,9 @@ function GM:EntityTakeDamage(ply, dmginfo)
 		elseif dmg > soundthres then
 			if dmg >= ply:Health() and not ply.ConvertingToSkeleton then
 				ply:ConvertToSkeleton()
+				if IsValid(attacker) and attacker:IsPlayer() then
+					attacker:AddFrags(1)
+				end
 			else
 				ply.NextMoanSound = CurTime() + math.Rand(10,15)
 				ply:Scream()
@@ -77,7 +82,7 @@ function GM:PlayerPostThink(ply)
 end
 
 local function NoClipTest( ply )
-	return false
+	return true
 end
 hook.Add( "PlayerNoClip", "NoClipTest", NoClipTest )
 
@@ -101,3 +106,22 @@ function GM:PlayerFootstep(ply, pos, foot, sound, volume, filter)
 	-- Maybe add killer heavy footsteps
 	-- Maybe increase volume of player footstep if sprinting?
 end
+
+local anims = {
+	[1] = {ACT_HL2MP_RUN_FIST, true}, -- Push
+	[2] = {ACT_HL2MP_RUN_PANICKED, true}, -- Tackle
+	[3] = {ACT_GMOD_GESTURE_ITEM_DROP, true}, -- Drop
+	[4] = {ACT_GMOD_GESTURE_RANGE_ZOMBIE_SPECIAL, true}, -- Quickgrab
+}
+hook.Add("DoAnimationEvent", "sacrifun_customanims", function(ply, event, data)
+	if event == PLAYERANIMEVENT_CUSTOM_GESTURE then
+		if anims[data] then
+			local tbl = anims[data]
+			local act = tbl[1]
+			local loop = tbl[2]
+			ply:AnimRestartGesture(GESTURE_SLOT_ATTACK_AND_RELOAD, act, loop)
+			
+			return ACT_INVALID
+		end
+	end
+end)

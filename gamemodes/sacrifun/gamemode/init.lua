@@ -19,9 +19,11 @@ include("doors.lua")
 include("round.lua")
 include("blinding.lua")
 include("blindphase_props.lua")
+include("anti_stuck.lua")
+include("health_stealing.lua")
 
 function GM:GetFallDamage(ply, speed)
-	if IsValid(ply:GetCarryingPlayer()) then
+	if IsValid(ply:GetCarryingPlayer()) or ply.GrabImmunity > CurTime() then
 		return 0
 	else
 		return speed/15
@@ -48,6 +50,10 @@ function GM:PlayerSpawn(ply)
 	if ply.PlayerSetUp then
 		player_manager.RunClass(ply, "Loadout")
 	end
+	
+	ply.GrabImmunity = CurTime() + 1
+	ply.StunImmunity = CurTime() + 3
+	ply.HealthStealImmunity = CurTime() + 3
 end
 
 function GM:PlayerSetHandsModel( ply, ent )
@@ -67,18 +73,46 @@ function GM:PlayerSetHandsModel( ply, ent )
 end
 
 function GM:PlayerDeathThink(ply)
-	if ply:IsKiller() then return ply:KeyDown(IN_ATTACK) end
+	if ply:IsKiller() then
+		local ct = CurTime()
+		if not ply.NextSpawnTime then ply.NextSpawnTime = ct + 3 end
+		
+		if ply.NextSpawnTime < ct and (ply:KeyDown(IN_ATTACK) or ply:KeyDown(IN_JUMP)) then 
+			ply:Spawn()
+		end
+	end
 end
 
 function GM:CanPlayerSuicide(ply)
 	if ply:IsSkeleton() then
 		if IsValid(ply.BonePile) then
-			ply.BonePile:Remove() -- Apparently doesn't remove it? :(
+			local pile = ply.BonePile
+			ply.BonePile = nil
 			ply:Spawn()
+			ply.BonePile = pile
 		end
 		ply:Stun()
 		return false
+	elseif ply:IsRunner() then
+		ply:ConvertToSkeleton()
+		return false
 	else
 		return true
+	end
+end
+
+function GM:DoPlayerDeath(ply, attacker, dmginfo)
+	ply:AddDeaths(1)
+	
+	if IsValid(attacker) and attacker:IsPlayer() then
+		if ( attacker == ply ) then
+			attacker:AddFrags(-1)
+		else
+			attacker:AddFrags(1)
+		end
+	end
+	
+	if not ply:IsSkeleton() then
+		ply:CreateRagdoll()
 	end
 end
