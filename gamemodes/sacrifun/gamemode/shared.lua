@@ -40,16 +40,14 @@ function GM:EntityTakeDamage(ply, dmginfo)
 		if IsValid(ply.Clone) and not ply.CLONEDMG then
 			ply:EndClone()
 			return true
-		elseif dmg > soundthres then
-			if dmg >= ply:Health() and not ply.ConvertingToSkeleton then
-				ply:ConvertToSkeleton()
-				if IsValid(attacker) and attacker:IsPlayer() then
-					attacker:AddFrags(1)
-				end
-			else
-				ply.NextMoanSound = CurTime() + math.Rand(10,15)
-				ply:Scream()
+		elseif dmg >= ply:Health() and not ply.ConvertingToSkeleton then 
+			ply:ConvertToSkeleton()
+			if IsValid(attacker) and attacker:IsPlayer() then
+				attacker:AddFrags(1)
 			end
+		elseif dmg > soundthres then
+			ply.NextMoanSound = CurTime() + math.Rand(10,15)
+			ply:Scream()
 		end
 	elseif pteam == 3 then
 		if dmg > ply:Health() then
@@ -82,7 +80,7 @@ function GM:PlayerPostThink(ply)
 end
 
 local function NoClipTest( ply )
-	return true
+	return GetConVar("sv_cheats"):GetBool()
 end
 hook.Add( "PlayerNoClip", "NoClipTest", NoClipTest )
 
@@ -115,13 +113,54 @@ local anims = {
 }
 hook.Add("DoAnimationEvent", "sacrifun_customanims", function(ply, event, data)
 	if event == PLAYERANIMEVENT_CUSTOM_GESTURE then
-		if anims[data] then
+		if data == 0 then
+			ply:AnimResetGestureSlot(GESTURE_SLOT_ATTACK_AND_RELOAD)
+		elseif anims[data] then
 			local tbl = anims[data]
 			local act = tbl[1]
-			local loop = tbl[2]
-			ply:AnimRestartGesture(GESTURE_SLOT_ATTACK_AND_RELOAD, act, loop)
+			local kill = tbl[2]
+			ply:AnimRestartGesture(GESTURE_SLOT_ATTACK_AND_RELOAD, act, kill)
 			
 			return ACT_INVALID
 		end
 	end
 end)
+
+-- 407	zombie_run_upperbody_layer
+--[[local replacements = {
+	[ACT_MP_WALK] = ACT_HL2MP_RUN_SCARED,
+	[ACT_MP_RUN] = ACT_HL2MP_RUN_SCARED,
+}
+local function InjuredPlayerAnims(ply, act)
+	if ply:IsInjured() and replacements[act] then
+	
+		--ply.CalcIdeal = replacements[ply.CalcIdeal]
+		
+		--return replacements[act]
+	end
+end
+hook.Add("TranslateActivity", "sacrifun_injuredanim", InjuredPlayerAnims)]]
+
+--[[local function InjuredPlayerAnims2(ply, act)
+	if CLIENT then return end
+	if ply:IsInjured() and not ply.InjAnim then
+		ply.InjAnim = ply:AddLayeredSequence(256, 1, false)
+		ply:SetLayerPlaybackRate(ply.InjAnim, 1)
+		ply:SetLayerCycle(ply.InjAnim, 0.5)
+		print("Here", ply.InjAnim, ply:IsValidLayer(ply.InjAnim), ply:GetLayerWeight(ply.InjAnim))
+	elseif not ply:IsInjured() and ply.InjAnim then
+		ply:RemoveAllGestures()
+		ply.InjAnim = nil
+		print("Removed")
+	end
+end]]
+local function InjuredPlayerAnims2(ply, act)
+	if ply:IsInjured() then
+		ply:AddVCDSequenceToGestureSlot(GESTURE_SLOT_CUSTOM, 256, 0.5, false)
+		if not ply.InjAnim then ply.InjAnim = true end
+	elseif not ply:IsInjured() and ply.InjAnim then
+		ply:AnimResetGestureSlot(GESTURE_SLOT_CUSTOM)
+		ply.InjAnim = nil
+	end
+end
+hook.Add("CalcMainActivity", "sacrifun_injuredanim", InjuredPlayerAnims2)

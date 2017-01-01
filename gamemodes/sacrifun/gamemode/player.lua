@@ -89,13 +89,18 @@ if SERVER then
 		local bp = ents.Create("sacrifun_bonepile")
 		bp:SetPos(self:GetPos())
 		bp:SetAngles(self:GetAngles())
-		bp:PreBonePosAng(self:GetPos() + vel + Vector(0,0,15), self:GetAngles())
+		local tr = util.TraceLine({
+			start = self:GetPos(),
+			endpos = self:GetPos() + vel + Vector(0,0,15),
+			filter = self
+		})
+		bp:PreBonePosAng(tr.Hit and tr.HitPos or self:GetPos() + vel + Vector(0,0,15), self:GetAngles())
 		bp:SetRebuildDelay(5)
 		bp:SetBoneDropDelay(2)
 		bp:Spawn()
 		bp:SetPlayer(self)
 		bp:BoneSetupForce(self:GetAimVector()*100)
-		self.ConvertingToSkeleton = nil
+		--self.ConvertingToSkeleton = nil
 		self.BonePile = bp
 	end
 	
@@ -110,7 +115,7 @@ if SERVER then
 			bp:SetRebuildDelay(5)
 			self.BonePile = bp
 			self:Kill()
-		else
+		elseif self:IsRunner() then -- Killers can't be stunned
 			local ct = CurTime()
 			time = time or 1
 			-- Handled in the player's move class
@@ -122,6 +127,11 @@ if SERVER then
 			net.Start("sfun_PlayerStun")
 				net.WriteFloat(time)
 			net.Send(self)
+			
+			local wep = self:GetActiveWeapon()
+			if IsValid(wep) and wep.Stun then
+				wep:Stun(time)
+			end
 		end
 	end
 	
@@ -306,7 +316,9 @@ else
 		local anim = net.ReadUInt(4)
 		local ply = net.ReadEntity()
 		
-		ply:DoAnimationEvent(anim)
+		if IsValid(ply) then
+			ply:DoAnimationEvent(anim)
+		end
 	end)
 end
 
@@ -315,7 +327,7 @@ function meta:IsRunner()
 end
 
 function meta:IsInjured()
-	return self:Health() < 50
+	return self:IsRunner() and self:Health() <= 60
 end
 
 function meta:IsKiller()
@@ -325,16 +337,6 @@ end
 function meta:IsSkeleton()
 	return self:Team() == 3
 end
-
-local function InjuredPlayerAnims(ply, vel)
-	if ply:IsInjured() then
-	
-		--ply.CalcIdeal = 1647
-		
-		--return ply.CalcIdeal, ply.CalcSeqOverride
-	end
-end
-hook.Add("CalcMainActivity", "sacrifun_injuredanim", InjuredPlayerAnims)
 
 -- Sound thingies
 

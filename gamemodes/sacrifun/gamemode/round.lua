@@ -10,6 +10,8 @@ if SERVER then
 			local weight = v.KillerWeight or 1
 			tbl[v] = weight
 			total = total + weight
+			
+			v:ResetVariables()
 		end
 		
 		-- Weighted random, every time you're not a killer your weight increases by 1
@@ -70,23 +72,31 @@ if SERVER then
 	end
 	
 	local function UpdatePlayerStatus()
-		local num = team.NumPlayers(1)
-		local min = runnercount > 1 and 1 or 0
-		if num <= min then
-			local ply = team.GetPlayers(1)[1]
-			if IsValid(ply) then
-				PrintMessage(HUD_PRINTTALK, ply:Nick() .. " wins!")
-			else
-				PrintMessage(HUD_PRINTTALK, "No winners :(")
+		if team.NumPlayers(2) < 1 then
+			for k,v in pairs(team.GetPlayers(1)) do
+				v:Cheer()
 			end
-			
-			local time = CurTime() + 5
-			hook.Add("Think", "sfun_roundover", function()
-				if CurTime() > time then
-					RoundRestart()
-					hook.Remove("Think", "sfun_roundover")
+			PrintMessage(HUD_PRINTTALK, "The killer rage quit! Everyone wins!")
+		else
+			local num = team.NumPlayers(1)
+			local min = runnercount > 1 and 1 or 0
+			if num <= min then
+				local ply = team.GetPlayers(1)[1]
+				if IsValid(ply) and not ply.ConvertingToSkeleton then
+					PrintMessage(HUD_PRINTTALK, ply:Nick() .. " was the last alive!")
+					ply:Cheer()
+				else
+					PrintMessage(HUD_PRINTTALK, "The killer killed everyone! There were no winners!")
 				end
-			end)
+				
+				local time = CurTime() + 5
+				hook.Add("Think", "sfun_roundover", function()
+					if CurTime() > time then
+						--RoundRestart()
+						hook.Remove("Think", "sfun_roundover")
+					end
+				end)
+			end
 		end
 	end
 	hook.Add("OnPlayerChangedTeam", "sfun_teamstatus", UpdatePlayerStatus)

@@ -47,13 +47,15 @@ if SERVER then
 	end
 	
 	util.AddNetworkString("sfun_SensePing")
-	function meta:SensePing(target, nokiller)
+	function meta:SensePing(target, nokiller, showkillers)
 		net.Start("sfun_SensePing")
 			if IsValid(target) then
 				net.WriteBool(true)
 				net.WriteEntity(target)
 			else
 				net.WriteBool(false)
+				showkillers = showkillers or IsInBlindPhase() or true
+				net.WriteBool(showkillers) -- If true, also sense killers
 			end
 		net.Send(self)
 		
@@ -109,6 +111,9 @@ else
 			tbl = {net.ReadEntity()}
 		else
 			tbl = team.GetPlayers(1)
+			if net.ReadBool() then
+				table.Add(tbl, team.GetPlayers(2))
+			end
 		end
 		for k,v in pairs(tbl) do
 			if v != LocalPlayer() then
@@ -125,6 +130,9 @@ else
 						mdl:SetPoseParameter("move_y", v:GetPoseParameter("move_y"))
 						mdl:SetPoseParameter("aim_yaw", v:GetPoseParameter("aim_yaw"))
 						mdl:SetNoDraw(true)
+						if v:Team() == 2 then
+							mdl:SetModelScale(1.2)
+						end
 						senseplys[mdl] = {ply = v, time = CurTime() + sensetime + time}
 					end
 				end)

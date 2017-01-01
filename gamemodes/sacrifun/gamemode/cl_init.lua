@@ -101,9 +101,7 @@ local huds = {
 			salpha = 255
 			if alt then
 				aalpha = 255
-				if ply:GetVelocity():Length2D() > 100 then
-					sna = 125
-				end
+				sna = 125
 			else
 				aalpha = 100
 			end			
@@ -179,9 +177,6 @@ local huds = {
 		
 		surface.SetMaterial(icon_runner)
 		surface.DrawTexturedRect(180, sh - 160, 60, 60)
-		
-		surface.SetDrawColor(125,125,125)
-		surface.DrawRect(180, sh - 99 - 60*sense, 60, 60*sense)
 		
 		draw.SimpleTextOutlined("x"..numclones, "DermaLarge", 230, sh-110, color_white, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 2, color_black)
 	end,
@@ -305,7 +300,7 @@ function GM:HUDDrawTargetID()
 	
 	if not IsValid(targetply) then
 		targetply = ent
-		targettime = CurTime() + 0.25 -- The delay for the text to show up
+		targettime = CurTime() + 0.15 -- The delay for the text to show up
 	end
 	
 	local x = ScrW()/2 - 100

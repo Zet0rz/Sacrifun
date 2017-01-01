@@ -4,6 +4,8 @@ CreateConVar("sfun_doors_oneway", 1, {FCVAR_SERVER_CAN_EXECUTE, FCVAR_NOTIFY, FC
 
 local doors = {
 	["prop_door_rotating"] = true,
+	["func_door"] = true,
+	["func_door_rotating"] = true,
 }
 
 hook.Add("OnEntityCreated", "sacrifun_replacedoors", function(ent)
@@ -37,7 +39,15 @@ hook.Add("FindUseEntity", "sacrifun_doorreset", function(ply, ent)
 		if cvar:GetBool() or (ent.SlamShutTime and ent.SlamShutTime > CurTime()) then
 			return false
 		else
-			ent:SetKeyValue("speed", ent.OriginalDoorSpeed or "100")
+			if ply:KeyPressed(IN_USE) then
+				local wep = ply:GetActiveWeapon()
+				if IsValid(wep) and not IsValid(wep.CarriedObject) then
+					wep:SecondaryAttack()
+					return false
+				else
+					ent:SetKeyValue("speed", ent.OriginalDoorSpeed or "100")
+				end
+			end
 		end
 	end
 end)

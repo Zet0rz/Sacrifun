@@ -25,7 +25,16 @@ hook.Add("Think", "sacrifun_antistuck", function()
 				if not IsValid(tr.Entity) then
 					v:SetCarriedObject(nil)
 					v:CollisionRulesChanged()
+					v.NextSuffocationDamage = nil
 					table.remove(looptbl, k)
+				else
+					if not v.NextSuffocationDamage then
+						v.NextSuffocationDamage = CurTime() + 2
+					end
+					if v.NextSuffocationDamage < CurTime() then
+						v:TakeDamage(5, v, v:GetCarriedObject())
+						v.NextSuffocationDamage = CurTime() + 1
+					end
 				end
 			else
 				table.remove(looptbl, k)

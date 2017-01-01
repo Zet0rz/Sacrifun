@@ -27,9 +27,9 @@ SWEP.AdminSpawnable		= false
 SWEP.HoldType = "normal"
 
 SWEP.ViewModel	= "models/weapons/c_sacrifun_arms.mdl"
-SWEP.WorldModel	= ""
+SWEP.WorldModel	= "models/weapons/w_crowbar.mdl"
 SWEP.UseHands = true
-SWEP.vModel = true
+--SWEP.vModel = true
 
 SWEP.Primary.ClipSize		= -1
 SWEP.Primary.DefaultClip	= -1
@@ -68,7 +68,7 @@ local actions = {
 
 function SWEP:Initialize()
 
-	self:SetHoldType( "normal" )
+	if SERVER then self:SetHoldType(self.HoldType) end
 	self.NextIdleTime = 0
 
 end
@@ -78,6 +78,10 @@ function SWEP:SetupDataTables()
 end
 
 function SWEP:Deploy()
+	if IsValid(self.Owner:GetViewModel()) then self.Owner:SetupHands() end
+	if IsValid(self.Owner:GetViewModel()) then
+		self.Owner:GetViewModel():SetNoDraw(false)
+	end
 end
 
 local primaryacts = {
@@ -117,6 +121,7 @@ end
 
 local secondaryacts = {
 	["prop_door_rotating"] = function(ply, ent, sprint)
+		if ent.SlamShutTime and ent.SlamShutTime > CurTime() then return end
 		ent:Use(ply, ply, SIMPLE_USE, 1)
 		if sprint then
 			ent:SetKeyValue("speed", "1000")
@@ -134,8 +139,32 @@ local secondaryacts = {
 		end
 	end,
 	["func_door_rotating"] = function(ply, ent, sprint)
+		if ent.SlamShutTime and ent.SlamShutTime > CurTime() then return end
 		if sprint then
 			ent:SetKeyValue("speed", "1000")
+		else
+			ent:SetKeyValue("speed", ent.OriginalDoorSpeed or "100")
+		end
+		ent:Use(ply, ply, SIMPLE_USE, 1)
+		if sprint then
+			
+			ent.SlamShutTime = CurTime() + 0.5 -- Won't be openable for this amount of time!
+			ply:SetCarriedObject(ent)
+			ply:CollisionRulesChanged()
+			timer.Simple(1, function()
+				if IsValid(ply) then
+					ply:SetCarriedObject(nil)
+					ply:CollisionRulesChanged()
+				end
+			end)
+		else
+			ent:SetKeyValue("speed", ent.OriginalDoorSpeed or "100")
+		end
+	end,
+	["func_door"] = function(ply, ent, sprint)
+		if ent.SlamShutTime and ent.SlamShutTime > CurTime() then return end
+		if sprint then
+			ent:SetKeyValue("speed", "300")
 		else
 			ent:SetKeyValue("speed", ent.OriginalDoorSpeed or "100")
 		end
@@ -174,7 +203,7 @@ function SWEP:SecondaryAttack()
 	if CLIENT then return end
 	
 	local ply = self.Owner
-	if !IsValid(self.CarriedObject) then
+	if not IsValid(self.CarriedObject) then
 		local sprint = ply:KeyDown(IN_SPEED) --and ply:GetVelocity():Length2D() > 100
 		local tr
 		if sprint then
@@ -197,11 +226,10 @@ function SWEP:SecondaryAttack()
 			end
 		end
 	end
-	
 end
 
 local maxdist = 125^2
-local healfreq = 0.2
+local healfreq = 0.3
 
 local healsounds = {
 	"sacrifun/heal/bat_draw.wav",
@@ -317,11 +345,17 @@ function SWEP:Think()
 	
 	if not self:GetActionLocked() and not self.NextIdleTime then
 		local vel = self.Owner:GetVelocity():Length2D()
-		if vel > 100 and self.Owner:KeyDown(IN_SPEED) then
-			if not self.Sprinting then
-				self:SendWeaponAnim(ACT_VM_SPRINT_IDLE)
-				self.Sprinting = true
-			elseif SERVER and self.CanSense then
+		if self.Owner:KeyDown(IN_SPEED) then
+			if vel > 100 then
+				if not self.Sprinting then
+					self:SendWeaponAnim(ACT_VM_SPRINT_IDLE)
+					self.Sprinting = true
+				end
+			elseif self.Sprinting then
+				self:SendWeaponAnim(ACT_VM_IDLE)
+				self.Sprinting = false
+			end
+			if SERVER and self.CanSense then
 				if self.Owner:KeyDown(IN_WALK) then
 					if not self.Sensing then
 						self.Owner:StartSensing()
@@ -345,18 +379,18 @@ function SWEP:Think()
 		end
 	end
 	
-	if self.Sensing and self.NextSenseSteal < ct then
+	if IsFirstTimePredicted() and self.Sensing and self.NextSenseSteal < ct then
 		self.Owner:AttemptHealthSteal()
 		self.NextSenseSteal = ct + 0.5
 	end
 end
 
 function SWEP:PostDrawViewModel()
-
+	
 end
 
 function SWEP:DrawWorldModel()
-
+	
 end
 
 function SWEP:GetViewModelPosition(pos, ang)
@@ -446,6 +480,8 @@ function SWEP:PickupObject(ent, sprint, tr)
 					end
 				
 					phys:AddGameFlag(FVPHYSICS_PLAYER_HELD)
+					ent.OldMass = phys:GetMass()
+					phys:SetMass(1)
 					self.CarriedPhys = phys
 					
 					-- Using Shadow Objects
@@ -533,25 +569,29 @@ function SWEP:ReleaseObject()
 			end
 			
 			self.Owner:DropObject()
-			ent:GetPhysicsObject():ClearGameFlag(FVPHYSICS_PLAYER_HELD)
+			phys:ClearGameFlag(FVPHYSICS_PLAYER_HELD)
+			if self.SprintCarry then phys:SetVelocity(phys:GetVelocity()*0.2) end
 			ent.CarryingWep = nil
 			self.Owner:CollideWhenPossible()
 			
-			if IsValid(phys) then phys:Wake() end
+			if IsValid(phys) then
+				phys:Wake()
+				timer.Simple(0, function() if IsValid(ent) and IsValid(phys) and ent.OldMass then phys:SetMass(ent.OldMass) end end)
+			end
 			
 			if ent.OnDropped then ent:OnDropped(self.Owner) end
 		end
-		
-		self.CarriedObject = nil
-		self.CarriedPhys = nil
-		self.CarryDist = nil
-		self.CarryShadow = nil
 	end
+	
+	self.CarriedObject = nil
+	self.CarriedPhys = nil
+	self.CarryDist = nil
+	self.CarryShadow = nil
 	if IsValid(self.CarryHack) then self.CarryHack:Remove() end
 	if IsValid(self.Constr) then self.Constr:Remove() end
 	
 	self.NextIdleTime = 0
-	self:SetHoldType("normal")
+	if SERVER then self:SetHoldType(self.HoldType) end
 end
 
 function SWEP:Push(ent, tr)
@@ -640,7 +680,7 @@ function SWEP:EndHeal()
 	self.NextIdleTime = CurTime() + 1
 	self.HealTime = nil
 	self.Healing = nil
-	self:SetHoldType("normal")
+	if SERVER then self:SetHoldType(self.HoldType) end
 end
 
 function SWEP:StartFlash()
@@ -650,6 +690,7 @@ function SWEP:StartFlash()
 		end
 		self.Owner:Flashlight(false)
 		self:SetActionLocked(true)
+		self:SetHoldType("pistol")
 	elseif not IsValid(self.FlashTexture) then
 		self.FlashTexture = ProjectedTexture()
 		self.FlashTexture:SetEnableShadows(true)
@@ -660,7 +701,6 @@ function SWEP:StartFlash()
 	end
 	
 	self.FlashOn = true
-	self:SetHoldType("pistol")
 	
 end
 
@@ -672,13 +712,14 @@ function SWEP:EndFlash()
 		else
 			self.Owner:Flashlight(false)
 		end
+		self:SetHoldType(self.HoldType)
 	elseif IsValid(self.FlashTexture) then
 		self.FlashTexture:Remove()
 	end
 	
 	self.FlashOn = false
 	self.NextIdleTime = 0
-	self:SetHoldType("normal")
+	
 end
 
 function SWEP:Reload()
@@ -687,4 +728,15 @@ function SWEP:Reload()
 		local dur = self.Owner:Taunt()
 		self.NextTaunt = ct + dur + 0.2
 	end
+end
+
+function SWEP:Stun(time) -- When you get stunned
+	if self.Healing then
+		self:EndHeal()
+		self:Scream()
+	end
+	if self.CarriedObject then self:ReleaseObject() end
+	if self.FlashOn then self:EndFlash() end
+	self:SetActionLocked(true)
+	self.NextIdleTime = CurTime() + time
 end

@@ -41,20 +41,11 @@ SWEP.CanTacklePlayers = false
 SWEP.CanPushPlayers = false
 SWEP.CanSense = false
 
-function SWEP:Initialize()
-
-	self:SetHoldType( self.HoldType )
-
-end
-
-function SWEP:Deploy()
-end
-
 function SWEP:DrawWorldModel()
 	self:DrawModel()
 end
 
-local hitdmg = 70
+local hitdmg = 60
 local swingsound = Sound( "Weapon_Crowbar.Single" )
 local hitsound = Sound( "Weapon_Crowbar.Melee_Hit" )
 function SWEP:PrimaryAttack()

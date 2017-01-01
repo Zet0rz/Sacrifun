@@ -192,6 +192,7 @@ function ENT:Think()
 						rew:AddFrags(1)
 					end
 					ply:SetSkeleton()
+					ply.ConvertingToSkeleton = nil
 				end
 				ply:Spawn()
 				self:Remove()

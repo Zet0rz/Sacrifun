@@ -54,6 +54,15 @@ function GM:PlayerSpawn(ply)
 	ply.GrabImmunity = CurTime() + 1
 	ply.StunImmunity = CurTime() + 3
 	ply.HealthStealImmunity = CurTime() + 3
+	
+	-- Reset variables
+	ply:SetCarriedObject(nil)
+	ply:SetCarryingPlayer(nil)
+	ply:SetAdrenaline(0)
+	ply:SetCloneNumber(0)
+	ply:SetIsSensing(false)
+	ply.SenseCooldown = 1
+	ply:SensePing(nil, true) -- Don't show killer
 end
 
 function GM:PlayerSetHandsModel( ply, ent )

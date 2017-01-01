@@ -109,11 +109,14 @@ function PLAYER_KILLER:SetupDataTables()
 	self.Player:NetworkVar("Int", 1, "CloneNumber")
 	self.Player:NetworkVar("Entity", 0, "CarryingPlayer")
 	self.Player:NetworkVar("Entity", 1, "CarriedObject")
+	self.Player:NetworkVar("Bool", 0, "IsSensing")
 	
 	if SERVER then
+		self.Player:SetCarriedObject(nil)
 		self.Player:SetCarryingPlayer(nil)
 		self.Player:SetAdrenaline(0)
 		self.Player:SetCloneNumber(0)
+		self.Player:SetIsSensing(false)
 	end
 
 end
@@ -155,11 +158,18 @@ local PLAYER_SKELETON = {}
 
 function PLAYER_SKELETON:SetupDataTables()
 
+	self.Player:NetworkVar("Int", 0, "Adrenaline")
+	self.Player:NetworkVar("Int", 1, "CloneNumber")
 	self.Player:NetworkVar("Entity", 0, "CarryingPlayer")
 	self.Player:NetworkVar("Entity", 1, "CarriedObject")
+	self.Player:NetworkVar("Bool", 0, "IsSensing")
 	
 	if SERVER then
+		self.Player:SetCarriedObject(nil)
 		self.Player:SetCarryingPlayer(nil)
+		self.Player:SetAdrenaline(0)
+		self.Player:SetCloneNumber(0)
+		self.Player:SetIsSensing(false)
 	end
 
 end

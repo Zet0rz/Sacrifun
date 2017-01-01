@@ -1,9 +1,10 @@
 AddCSLuaFile()
 
 ENT.Base = "base_nextbot"
-ENT.PrintName = "Faked downed player"
+ENT.PrintName = "Player Clone Controller"
 ENT.Category = "Sacrifun"
 ENT.Author = "Zet0r"
+ENT.RenderGroup = RENDERGROUP_TRANSLUCENT
 
 local clonetime = 20 -- Time for each clone life
 local clonetickdelay = clonetime/100
@@ -13,6 +14,9 @@ function ENT:Initialize()
     --self:SetModel( "models/player/kleiner.mdl" )
 	self.NextCloneTick = CurTime() + clonetickdelay
 	self:SetCustomCollisionCheck(true)
+	
+	self:SetColor(Color(255,255,255,50))
+	self:SetRenderMode(RENDERMODE_TRANSALPHA)
 	
 	self:SetHealth(10000)
 end
@@ -55,7 +59,7 @@ function ENT:RunBehaviour()
     end
 end
 
-local mat = Material("Models/effects/comball_tape")
+--[[local mat = Material("Models/effects/comball_tape")
 function ENT:Draw()
 	
 	self:DrawModel()
@@ -63,7 +67,7 @@ function ENT:Draw()
 	--self:DrawModel()
 	--render.MaterialOverride(nil)
 
-end
+end]]
 
 function ENT:UpdateTransmitState()
 	return TRANSMIT_ALWAYS
@@ -88,7 +92,7 @@ end
 
 function ENT:OnRemove()
 	local ply = self:GetPlayerOwner()
-	if IsValid(ply) then
+	if IsValid(ply) and SERVER then
 		net.Start("sfun_cloneoverlay")
 			net.WriteBool(false)
 		net.Send(ply)
