@@ -152,20 +152,16 @@ local huds = {
 		local sh = ScrH()
 		local sw = ScrW()
 		
-		local numclones = ply:GetCloneNumber()
+		local numrunners = team.NumPlayers(1)
 		
 		local healthpct = health/100
 		
 		surface.SetDrawColor(50,50,50,150)
 		surface.SetMaterial(mat_bar)
 		surface.DrawTexturedRectUV(165, sh - 95, 350, 20, 0, 0, 1, 1)
-		surface.DrawTexturedRectUV(235, sh - 125, 250, 15, 0, 1, 1, 0)
 		
 		surface.SetDrawColor(255,125,125)
-		surface.DrawTexturedRectUV(161, sh - 93, 350*healthpct, 16, 1-healthpct, 0.1, 1, 0.9)
-		surface.SetDrawColor(125,255,125)
-		surface.DrawTexturedRectUV(231, sh - 123, 250*adrenaline, 11, 1-adrenaline, 0.9, 1, 0.1)
-		
+		surface.DrawTexturedRectUV(161, sh - 93, 350*healthpct, 16, 1-healthpct, 0.1, 1, 0.9)		
 		
 		draw.RoundedBox(16, 50, sh - 170, 120, 120, color_health)
 		draw.RoundedBox(16, 180, sh - 160, 60, 60, color_sense)
@@ -178,7 +174,7 @@ local huds = {
 		surface.SetMaterial(icon_runner)
 		surface.DrawTexturedRect(180, sh - 160, 60, 60)
 		
-		draw.SimpleTextOutlined("x"..numclones, "DermaLarge", 230, sh-110, color_white, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 2, color_black)
+		draw.SimpleTextOutlined("x"..numrunners, "DermaLarge", 230, sh-110, color_white, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 2, color_black)
 	end,
 	[3] = function()
 		local ply = LocalPlayer()

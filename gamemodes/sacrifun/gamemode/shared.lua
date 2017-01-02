@@ -11,20 +11,6 @@ function GM:PlayerSwitchFlashlight(ply, SwitchOn)
      return true
 end
 
-function GM:PlayerInitialSpawn(ply)
-
-	ply:SetRunner()
-	ply:SetCustomCollisionCheck(true)
-	
-end
-
-function GM:PlayerSpawn(ply)
-
-	ply:StripWeapons()
-	player_manager.RunClass(ply, "Loadout")
-	
-end
-
 local soundthres = 40
 function GM:EntityTakeDamage(ply, dmginfo)
 	if not ply:IsPlayer() then return end
@@ -38,7 +24,7 @@ function GM:EntityTakeDamage(ply, dmginfo)
 	local dmg = dmginfo:GetDamage()
 	if pteam == 1 then
 		if IsValid(ply.Clone) and not ply.CLONEDMG then
-			ply:EndClone()
+			ply:EndClone(nil, true)
 			return true
 		elseif dmg >= ply:Health() and not ply.ConvertingToSkeleton then 
 			ply:ConvertToSkeleton()
@@ -48,6 +34,16 @@ function GM:EntityTakeDamage(ply, dmginfo)
 		elseif dmg > soundthres then
 			ply.NextMoanSound = CurTime() + math.Rand(10,15)
 			ply:Scream()
+		end
+		
+		if ply.StunTime and ply.StunTime > CurTime() then
+			ply:Stun(0) -- Resets clientsided
+			ply.StunTime = 0 -- Resets serversided
+		end
+		
+		local wep = ply:GetActiveWeapon()
+		if IsValid(wep) and wep.Healing then
+			wep:EndHeal()
 		end
 	elseif pteam == 3 then
 		if dmg > ply:Health() then
@@ -68,6 +64,12 @@ hook.Add("ShouldCollide", "sacrifun_clonecollide", function(e1, e2)
 	if (e1.GetCarriedObject and e1:GetCarriedObject() == e2) or (e2.GetCarriedObject and e2:GetCarriedObject() == e1) then
 		return false
 	end
+	
+	if (e1.GetNoCollidePlayers and e1:GetNoCollidePlayers()) or (e2.GetNoCollidePlayers and e2:GetNoCollidePlayers()) then
+		return false
+	end
+	
+	return true
 end)
 
 function GM:PlayerPostThink(ply)
@@ -156,9 +158,10 @@ hook.Add("TranslateActivity", "sacrifun_injuredanim", InjuredPlayerAnims)]]
 end]]
 local function InjuredPlayerAnims2(ply, act)
 	if ply:IsInjured() then
-		ply:AddVCDSequenceToGestureSlot(GESTURE_SLOT_CUSTOM, 256, 0.5, false)
+		ply:AddVCDSequenceToGestureSlot(GESTURE_SLOT_CUSTOM, ply:LookupSequence("gesture_bow_base_layer"), 0.5, false)
 		if not ply.InjAnim then ply.InjAnim = true end
 	elseif not ply:IsInjured() and ply.InjAnim then
+		ply:AnimResetGestureSlot(GESTURE_SLOT_VCD)
 		ply:AnimResetGestureSlot(GESTURE_SLOT_CUSTOM)
 		ply.InjAnim = nil
 	end

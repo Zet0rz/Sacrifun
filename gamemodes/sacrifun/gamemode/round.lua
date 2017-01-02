@@ -10,8 +10,6 @@ if SERVER then
 			local weight = v.KillerWeight or 1
 			tbl[v] = weight
 			total = total + weight
-			
-			v:ResetVariables()
 		end
 		
 		-- Weighted random, every time you're not a killer your weight increases by 1
@@ -77,6 +75,14 @@ if SERVER then
 				v:Cheer()
 			end
 			PrintMessage(HUD_PRINTTALK, "The killer rage quit! Everyone wins!")
+			
+			local time = CurTime() + 5
+			hook.Add("Think", "sfun_roundover", function()
+				if CurTime() > time then
+					RoundRestart()
+					hook.Remove("Think", "sfun_roundover")
+				end
+			end)
 		else
 			local num = team.NumPlayers(1)
 			local min = runnercount > 1 and 1 or 0
@@ -92,7 +98,7 @@ if SERVER then
 				local time = CurTime() + 5
 				hook.Add("Think", "sfun_roundover", function()
 					if CurTime() > time then
-						--RoundRestart()
+						RoundRestart()
 						hook.Remove("Think", "sfun_roundover")
 					end
 				end)

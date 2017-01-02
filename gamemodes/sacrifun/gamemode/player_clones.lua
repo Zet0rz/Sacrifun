@@ -47,17 +47,30 @@ if SERVER then
 		net.Send(self)
 	end
 	
-	function meta:EndClone(replace)
+	function meta:EndClone(replace, kill)
 		local clone = self.Clone
+		
+		if kill then
+			local e = EffectData()
+			e:SetOrigin(self:GetPos() + Vector(0,0,40))
+			util.Effect("cball_explode", e, true, true)
+		end
+		
 		if not replace then
-			self:SetPos(clone:GetPos())
-			self:SetEyeAngles(clone.PlayerEyeAngles)
+			local pos = clone:GetPos()
+			local ang = clone.PlayerEyeAngles
+			timer.Simple(0, function()
+				if IsValid(self) then
+					self:SetPos(pos)
+					self:SetEyeAngles(ang)
+				end
+			end)
 		end
 		clone:Remove()
 		self.Clone = nil
 		
 		local clonenum = self:GetCloneNumber()
-		if self:GetAdrenaline() <= 0 and clonenum > 0 then
+		if (kill or self:GetAdrenaline() <= 0) and clonenum > 0 then
 			self:SetCloneNumber(clonenum - 1)
 			if clonenum > 1 then
 				self:SetAdrenaline(100)
@@ -72,6 +85,10 @@ if SERVER then
 			self:SetAdrenaline(100)
 		end
 		self:SetCloneNumber(clonenum + num)
+		
+		local e = EffectData()
+		e:SetEntity(self)
+		util.Effect("sacrifun_cloneget", e, true, true)
 	end
 	
 else

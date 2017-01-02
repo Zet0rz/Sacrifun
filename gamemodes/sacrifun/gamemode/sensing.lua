@@ -1,8 +1,8 @@
 
 --local sensekey = MOUSE_MIDDLE
 
-local cooldownspeed = 0.4
-local cooldownspeedslow = 0.01
+local cooldownspeed = 1/3 -- 1 every 3 seconds
+local cooldownspeedslow = 1/60 -- 1 ever 60 seconds
 
 if SERVER then
 	--[[hook.Add("PlayerButtonDown", "sacrifun_sense", function(ply, key)
@@ -19,12 +19,20 @@ if SERVER then
 	hook.Add("Think", "sacrifun_sense", function()
 		for k,v in pairs(player.GetAll()) do
 			local sensecooldown = v.SenseCooldown or 0
+			
+			-- Forced sensing
+			if sensecooldown <= 0 then
+				v.SenseCooldown = 1
+				v:SensePing()
+			end
+			
 			if v:GetIsSensing() then
-				if sensecooldown <= 0 then
+				-- Only sensing on command
+				--[[if sensecooldown <= 0 then
 					v.SenseCooldown = 1
 					v:SensePing()
 					--v:AttemptHealthSteal()
-				end
+				end]]
 				if sensecooldown > 0 then
 					v.SenseCooldown = math.Clamp(sensecooldown - cooldownspeed*FrameTime(), 0, 1)
 				end
@@ -39,11 +47,11 @@ if SERVER then
 	local meta = FindMetaTable("Player")
 	
 	function meta:StartSensing()
-		self:SetIsSensing(true)
+		if self.SetIsSensing then  self:SetIsSensing(true) end
 	end
 	
 	function meta:EndSensing()
-		self:SetIsSensing(false)
+		if self.SetIsSensing then self:SetIsSensing(false) end
 	end
 	
 	util.AddNetworkString("sfun_SensePing")
@@ -54,7 +62,7 @@ if SERVER then
 				net.WriteEntity(target)
 			else
 				net.WriteBool(false)
-				showkillers = showkillers or IsInBlindPhase() or true
+				showkillers = showkillers or IsInBlindPhase()
 				net.WriteBool(showkillers) -- If true, also sense killers
 			end
 		net.Send(self)

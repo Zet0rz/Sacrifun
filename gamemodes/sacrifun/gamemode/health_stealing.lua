@@ -1,9 +1,19 @@
 local meta = FindMetaTable("Player")
 
+-- 45 health steal + 55 damage = 2 times able to steal and tank a second hit
+-- 100 - 55 = 45
+-- 45 + 40 = 85
+-- 85 - 55 = 30 [Tanked +1 hit]
+-- 30 + 40 = 70
+-- 70 - 55 = 15 [Tanked +1 hit]
+-- 15 + 40 = 55
+-- 55 - 55 = 0
+-- Total health steals possible in 1 chase: 2
+
 local range = 250
-local steal = 25
-local cooldown = 5
-local immunity = 1
+local steal = 45
+local cooldown = 10
+local immunity = 2
 local mins = Vector(-5,-5,-5)
 local maxs = Vector(5,5,5)
 

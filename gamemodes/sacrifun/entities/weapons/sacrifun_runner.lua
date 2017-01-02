@@ -97,6 +97,7 @@ function SWEP:PrimaryAttack()
 		return
 	end
 	
+	self.Owner:LagCompensation(true)
 	local sprint = ply:KeyDown(IN_SPEED) --and ply:GetVelocity():Length2D() > 100
 	if sprint then
 		tr = util.TraceHull( {
@@ -110,6 +111,7 @@ function SWEP:PrimaryAttack()
 	else
 		tr = util.QuickTrace(ply:EyePos(), ply:GetAimVector()*(sprint and 200 or 100), ply)
 	end
+	self.Owner:LagCompensation(false)
 	
 	if IsValid(tr.Entity) and primaryacts[tr.Entity:GetClass()] then
 		primaryacts[tr.Entity:GetClass()](ply, tr.Entity, sprint)
@@ -206,6 +208,7 @@ function SWEP:SecondaryAttack()
 	if not IsValid(self.CarriedObject) then
 		local sprint = ply:KeyDown(IN_SPEED) --and ply:GetVelocity():Length2D() > 100
 		local tr
+		self.Owner:LagCompensation(true)
 		if sprint then
 			tr = util.TraceHull( {
 				start = ply:GetShootPos(),
@@ -218,6 +221,7 @@ function SWEP:SecondaryAttack()
 		else
 			tr = util.QuickTrace(ply:EyePos(), ply:GetAimVector()*(sprint and 200 or 100), ply)
 		end
+		self.Owner:LagCompensation(false)
 		if IsValid(tr.Entity) then
 			if secondaryacts[tr.Entity:GetClass()] then
 				secondaryacts[tr.Entity:GetClass()](ply, tr.Entity, sprint)
@@ -229,7 +233,7 @@ function SWEP:SecondaryAttack()
 end
 
 local maxdist = 125^2
-local healfreq = 0.3
+local healfreq = 0.15
 
 local healsounds = {
 	"sacrifun/heal/bat_draw.wav",
@@ -264,7 +268,7 @@ function SWEP:Think()
 			self.NextHealSound = ct + math.Rand(0.5,1)
 		end
 		
-		self.Owner:SetHealth(self.Owner:Health()+1)
+		if self.HealBlock < ct then self.Owner:SetHealth(self.Owner:Health()+1) end
 		self.HealTime = ct + healfreq
 		return
 	end
@@ -275,11 +279,15 @@ function SWEP:Think()
 		elseif SERVER and (not self.NextBlind or self.NextBlind < ct) then
 			local shootpos = self.Owner:GetShootPos()
 			local aim = self.Owner:GetAimVector()
+			self.Owner:LagCompensation(true)
+			
 			local tr = util.TraceLine({
 				start = shootpos,
-				endpos = shootpos + aim*500,
+				endpos = shootpos + aim*600,
 				filter = self.Owner
 			})
+			
+			self.Owner:LagCompensation(false)
 			local ent = tr.Entity
 			if IsValid(ent) and ent:IsPlayer() and tr.HitGroup == HITGROUP_HEAD then
 				local aim2 = ent:GetAimVector()
@@ -467,21 +475,23 @@ function SWEP:PickupObject(ent, sprint, tr)
 			local phys = ent:GetPhysicsObject()
 			
 			if allow then
-				time = time or 0.25
-				if ent:IsPlayer() and issprinting and not IsValid(ent:GetCarryingPlayer()) and ent.GrabImmunity < CurTime() then --and ent:GetAimVector():Dot(self.Owner:GetAimVector()) > 0 then
-					self.Owner:SetCarriedObject(ent)
-					ent:SetCarryingPlayer(self.Owner)
-					self.Owner:CollisionRulesChanged()
-					self.NextDrop = CurTime() + time
-					self:SendWeaponAnim(ACT_VM_PULLBACK)
+				time = time or 50
+				if ent:IsPlayer() then
+					if issprinting and not IsValid(ent:GetCarryingPlayer()) and ent.GrabImmunity < CurTime() then --and ent:GetAimVector():Dot(self.Owner:GetAimVector()) > 0 then
+						self.Owner:SetCarriedObject(ent)
+						ent:SetCarryingPlayer(self.Owner)
+						self.Owner:CollisionRulesChanged()
+						self.NextDrop = CurTime() + time
+						self:SendWeaponAnim(ACT_VM_PULLBACK)
+					end
 				else
 					if IsValid(ent.CarryingWep) then
 						ent.CarryingWep:ReleaseObject() -- Steal from the other player
 					end
 				
 					phys:AddGameFlag(FVPHYSICS_PLAYER_HELD)
-					ent.OldMass = phys:GetMass()
-					phys:SetMass(1)
+					if not ent.OldMass then ent.OldMass = phys:GetMass() end
+					phys:SetMass(0.1)
 					self.CarriedPhys = phys
 					
 					-- Using Shadow Objects
@@ -497,7 +507,7 @@ function SWEP:PickupObject(ent, sprint, tr)
 					-- Using TTT's CarryHack
 					local hack = ents.Create("prop_physics")
 					if IsValid(hack) then
-						hack:SetPos(ent:GetPos())
+						hack:SetPos(tr.HitPos)
 						hack:SetAngles(self.Owner:GetAngles())
 						hack:SetModel("models/weapons/w_bugbait.mdl")
 						hack:SetNoDraw(true)
@@ -541,7 +551,7 @@ function SWEP:PickupObject(ent, sprint, tr)
 				
 				local dist = ent.GetPickupDistance and ent:GetPickupDistance(tr)
 				if not dist then
-					dist = math.Clamp((self.Owner:GetShootPos() - tr.Entity:GetPos()):Length(), 50, 100)
+					dist = math.Clamp((self.Owner:GetShootPos() - tr.HitPos):Length(), 50, 100)
 				end
 				
 				self.CarryDist = dist or 75
@@ -559,6 +569,11 @@ function SWEP:ReleaseObject()
 		if ent:IsPlayer() then
 			ent:SetCarryingPlayer(nil)
 			ent.GrabImmunity = CurTime() + 1 -- Immune to grab and fall damage for 1 sec!
+			local vel = ent:GetVelocity()
+			local inverse = vel:Length()-300
+			if inverse > 0 then
+				ent:SetVelocity(vel:GetNormalized()*-inverse)
+			end
 			
 			self.Owner:CollideWhenPossible()
 		else
@@ -671,6 +686,7 @@ function SWEP:StartHeal()
 	self:SendWeaponAnim(ACT_VM_DEPLOYED_IN)
 	self:SetCycle(0)
 	self.HealTime = CurTime() + 0.5
+	self.HealBlock = CurTime() + 2
 	self:SetActionLocked(true)
 	self:SetHoldType("slam")
 end
@@ -684,6 +700,7 @@ function SWEP:EndHeal()
 end
 
 function SWEP:StartFlash()
+	if not self.CanBlind then return end
 	if SERVER then
 		if self.Owner:FlashlightIsOn() then
 			self.FlashWasOn = true
@@ -723,6 +740,7 @@ function SWEP:EndFlash()
 end
 
 function SWEP:Reload()
+	if CLIENT then return end
 	local ct = CurTime()
 	if not self.NextTaunt or self.NextTaunt < ct then
 		local dur = self.Owner:Taunt()
@@ -733,10 +751,12 @@ end
 function SWEP:Stun(time) -- When you get stunned
 	if self.Healing then
 		self:EndHeal()
-		self:Scream()
+		self.Owner:Scream()
 	end
 	if self.CarriedObject then self:ReleaseObject() end
 	if self.FlashOn then self:EndFlash() end
 	self:SetActionLocked(true)
 	self.NextIdleTime = CurTime() + time
+	self:SendWeaponAnim(ACT_VM_IDLE)
+	self.Sprinting = false
 end

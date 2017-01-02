@@ -45,7 +45,7 @@ function SWEP:DrawWorldModel()
 	self:DrawModel()
 end
 
-local hitdmg = 60
+local hitdmg = 55
 local swingsound = Sound( "Weapon_Crowbar.Single" )
 local hitsound = Sound( "Weapon_Crowbar.Melee_Hit" )
 function SWEP:PrimaryAttack()
@@ -112,6 +112,19 @@ end
 
 local secondaryacts = {
 	["prop_door_rotating"] = function(ply, ent, sprint)
+		if ent.SlamShutTime and ent.SlamShutTime > CurTime() then return end
+		ent:Use(ply, ply, SIMPLE_USE, 1)
+		ent:SetKeyValue("speed", ent.OriginalDoorSpeed or "100")
+	end,
+	["func_door_rotating"] = function(ply, ent, sprint)
+		if ent.SlamShutTime and ent.SlamShutTime > CurTime() then return end
+		ent:SetKeyValue("speed", ent.OriginalDoorSpeed or "100")
+		ent:Use(ply, ply, SIMPLE_USE, 1)
+		ent:SetKeyValue("speed", ent.OriginalDoorSpeed or "100")
+	end,
+	["func_door"] = function(ply, ent, sprint)
+		if ent.SlamShutTime and ent.SlamShutTime > CurTime() then return end
+		ent:SetKeyValue("speed", ent.OriginalDoorSpeed or "100")
 		ent:Use(ply, ply, SIMPLE_USE, 1)
 		ent:SetKeyValue("speed", ent.OriginalDoorSpeed or "100")
 	end,
@@ -124,6 +137,7 @@ function SWEP:SecondaryAttack()
 	if !IsValid(self.CarriedObject) then
 		local sprint = ply:KeyDown(IN_SPEED) --and ply:GetVelocity():Length2D() > 100
 		local tr
+		self.Owner:LagCompensation(true)
 		if sprint then
 			tr = util.TraceHull( {
 				start = ply:GetShootPos(),
@@ -136,6 +150,7 @@ function SWEP:SecondaryAttack()
 		else
 			tr = util.QuickTrace(ply:EyePos(), ply:GetAimVector()*(sprint and 200 or 100), ply)
 		end
+		self.Owner:LagCompensation(true)
 		if IsValid(tr.Entity) then
 			if secondaryacts[tr.Entity:GetClass()] then
 				secondaryacts[tr.Entity:GetClass()](ply, tr.Entity, sprint)
@@ -224,18 +239,20 @@ function SWEP:PickupObject(ent, sprint, tr)
 			local phys = ent:GetPhysicsObject()
 			
 			if allow then
-				time = time or 0.25
+				time = time or 0.5
 				if IsValid(ent.CarryingWep) then
 					ent.CarryingWep:ReleaseObject() -- Steal from the other player
 				end
 			
 				phys:AddGameFlag(FVPHYSICS_PLAYER_HELD)
+				if not ent.OldMass then ent.OldMass = phys:GetMass() end
+				phys:SetMass(0.1)
 				self.CarriedPhys = phys
 				
 				-- Using TTT's CarryHack
 				local hack = ents.Create("prop_physics")
 				if IsValid(hack) then
-					hack:SetPos(ent:GetPos())
+					hack:SetPos(tr.HitPos)
 					hack:SetAngles(self.Owner:GetAngles())
 					hack:SetModel("models/weapons/w_bugbait.mdl")
 					hack:SetNoDraw(true)
@@ -265,7 +282,7 @@ function SWEP:PickupObject(ent, sprint, tr)
 				
 				local dist = ent.GetPickupDistance and ent:GetPickupDistance(tr)
 				if not dist then
-					dist = math.Clamp((self.Owner:GetShootPos() - tr.Entity:GetPos()):Length(), 50, 100)
+					dist = math.Clamp((self.Owner:GetShootPos() - tr.HitPos):Length(), 50, 100)
 				end
 				
 				self.CarryDist = dist or 75
@@ -296,7 +313,10 @@ function SWEP:ReleaseObject()
 		self.Owner:SetCarriedObject(nil)
 		self.Owner:CollisionRulesChanged()
 		
-		if IsValid(phys) then phys:Wake() end
+		if IsValid(phys) then
+			phys:Wake()
+			timer.Simple(0, function() if IsValid(ent) and IsValid(phys) and ent.OldMass then phys:SetMass(ent.OldMass) end end)
+		end
 		
 		if ent.OnDropped then ent:OnDropped(self.Owner) end
 		self.CarriedObject = nil

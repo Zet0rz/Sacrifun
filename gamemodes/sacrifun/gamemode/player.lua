@@ -42,9 +42,11 @@ if SERVER then
 			self:SetRunSpeed(sprintspeed)
 		end
 		if not collide then
-			self:SetCollisionGroup(COLLISION_GROUP_WEAPON)
-		else -- Overwrite regardless of time
-			self:SetCollisionGroup(COLLISION_GROUP_PLAYER)
+			self.SprintBurstNoCollide = true
+			self:SetNoCollidePlayers(true)
+			self:CollisionRulesChanged()
+		else
+			self.SprintBurstNoCollide = nil
 		end
 	end
 	
@@ -117,7 +119,7 @@ if SERVER then
 			self:Kill()
 		elseif self:IsRunner() then -- Killers can't be stunned
 			local ct = CurTime()
-			time = time or 1
+			time = time or 0.75
 			-- Handled in the player's move class
 			if not self.StunTime or self.StunTime - ct < time then
 				self.StunTime = ct + time
@@ -152,7 +154,9 @@ if SERVER then
 	end
 	
 	function meta:AutoAssignTeam()
-		if IsInBlindPhase() then
+		if team.NumPlayers(2) < 1 then -- No killers
+			RoundRestart()
+		elseif IsInBlindPhase() then
 			self:SetRunner()
 		else
 			self:SetSkeleton()

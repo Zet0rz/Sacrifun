@@ -1,9 +1,9 @@
 DEFINE_BASECLASS( "player_default" )
 
-local runspeed = 300
+local runspeed = 280
 local walkspeed = 200
 
-local killerrun = 320
+local killerrun = 300
 local killerwalk = 210
 
 local PLAYER_RUNNER = {}
@@ -15,6 +15,7 @@ function PLAYER_RUNNER:SetupDataTables()
 	self.Player:NetworkVar("Entity", 0, "CarryingPlayer")
 	self.Player:NetworkVar("Entity", 1, "CarriedObject")
 	self.Player:NetworkVar("Bool", 0, "IsSensing")
+	self.Player:NetworkVar("Bool", 1, "NoCollidePlayers")
 	
 	-- Setting starting variables here as these NetworkVars aren't created when the player is initially spawning
 	if SERVER then
@@ -23,6 +24,7 @@ function PLAYER_RUNNER:SetupDataTables()
 		self.Player:SetAdrenaline(0)
 		self.Player:SetCloneNumber(0)
 		self.Player:SetIsSensing(false)
+		self.Player:SetNoCollidePlayers(false)
 	end
 
 end
@@ -95,7 +97,9 @@ function PLAYER_RUNNER:Move(mv)
 		ply:SetRunSpeed(runspeed)
 		ply:SetWalkSpeed(walkspeed)
 		ply.SpeedModTime = nil
-		ply.SprintNoCollide = nil
+		if ply.SprintBurstNoCollide then
+			ply:CollideWhenPossible()
+		end
 	end
 end
 
@@ -110,6 +114,7 @@ function PLAYER_KILLER:SetupDataTables()
 	self.Player:NetworkVar("Entity", 0, "CarryingPlayer")
 	self.Player:NetworkVar("Entity", 1, "CarriedObject")
 	self.Player:NetworkVar("Bool", 0, "IsSensing")
+	self.Player:NetworkVar("Bool", 1, "NoCollidePlayers")
 	
 	if SERVER then
 		self.Player:SetCarriedObject(nil)
@@ -117,6 +122,7 @@ function PLAYER_KILLER:SetupDataTables()
 		self.Player:SetAdrenaline(0)
 		self.Player:SetCloneNumber(0)
 		self.Player:SetIsSensing(false)
+		self.Player:SetNoCollidePlayers(false)
 	end
 
 end
@@ -136,6 +142,7 @@ function PLAYER_KILLER:Init()
 	if CLIENT then sfun_SetTeamHUD(2) end
 end
 
+local maxjumps = 2
 function PLAYER_KILLER:Move(mv)
 	local ply = self.Player
 	
@@ -149,6 +156,20 @@ function PLAYER_KILLER:Move(mv)
 		ply:SetWalkSpeed(killerwalk)
 		ply.SpeedModTime = nil
 		ply.SprintNoCollide = nil
+		if ply.SprintBurstNoCollide then
+			ply:CollideWhenPossible()
+		end
+	end
+	
+	if mv:KeyPressed(IN_JUMP) then
+		if IsFirstTimePredicted() then ply.JumpCount = ply.JumpCount and ply.JumpCount + 1 or 1 end
+		if ply.JumpCount <= maxjumps and not ply:IsOnGround() then
+			local vel = mv:GetVelocity()
+			vel.z = ply:GetJumpPower()*2
+			mv:SetVelocity(vel)
+		end
+	elseif ply:IsOnGround() and (not ply.JumpCount or ply.JumpCount > 0) then
+		ply.JumpCount = 0
 	end
 end
 
@@ -163,6 +184,7 @@ function PLAYER_SKELETON:SetupDataTables()
 	self.Player:NetworkVar("Entity", 0, "CarryingPlayer")
 	self.Player:NetworkVar("Entity", 1, "CarriedObject")
 	self.Player:NetworkVar("Bool", 0, "IsSensing")
+	self.Player:NetworkVar("Bool", 1, "NoCollidePlayers")
 	
 	if SERVER then
 		self.Player:SetCarriedObject(nil)
@@ -170,6 +192,7 @@ function PLAYER_SKELETON:SetupDataTables()
 		self.Player:SetAdrenaline(0)
 		self.Player:SetCloneNumber(0)
 		self.Player:SetIsSensing(false)
+		self.Player:SetNoCollidePlayers(false)
 	end
 
 end
@@ -201,6 +224,9 @@ function PLAYER_SKELETON:Move(mv)
 		ply:SetWalkSpeed(walkspeed)
 		ply.SpeedModTime = nil
 		ply.SprintNoCollide = nil
+		if ply.SprintBurstNoCollide then
+			ply:CollideWhenPossible()
+		end
 	end
 end
 

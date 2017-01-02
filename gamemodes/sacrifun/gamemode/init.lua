@@ -30,6 +30,13 @@ function GM:GetFallDamage(ply, speed)
 	end
 end
 
+function GM:PlayerInitialSpawn(ply)
+
+	ply:AutoAssignTeam()
+	ply:SetCustomCollisionCheck(true)
+	
+end
+
 function GM:PlayerSpawn(ply)
 	ply:SetupHands()
 	
@@ -63,6 +70,7 @@ function GM:PlayerSpawn(ply)
 	ply:SetIsSensing(false)
 	ply.SenseCooldown = 1
 	ply:SensePing(nil, true) -- Don't show killer
+	ply.ConvertingToSkeleton = nil
 end
 
 function GM:PlayerSetHandsModel( ply, ent )
