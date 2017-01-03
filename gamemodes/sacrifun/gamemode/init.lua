@@ -130,6 +130,9 @@ function GM:DoPlayerDeath(ply, attacker, dmginfo)
 	end
 	
 	if not ply:IsSkeleton() then
+		if not ply.ConvertingToSkeleton then -- Fallback, sometimes you don't convert
+			ply:ConvertToSkeleton()
+		end
 		ply:CreateRagdoll()
 	end
 end

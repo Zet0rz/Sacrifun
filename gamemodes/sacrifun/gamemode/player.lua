@@ -9,6 +9,7 @@ if SERVER then
 		player_manager.RunClass(self, "Loadout")
 		--hook.Run("sfun_UpdateTeamStatus")
 		self.PlayerSetUp = true
+		self.ConvertingToSkeleton = nil
 	end
 	
 	function meta:SetKiller()
@@ -331,7 +332,7 @@ function meta:IsRunner()
 end
 
 function meta:IsInjured()
-	return self:IsRunner() and self:Health() <= 60
+	return self:IsRunner() and self:Health() <= 55
 end
 
 function meta:IsKiller()

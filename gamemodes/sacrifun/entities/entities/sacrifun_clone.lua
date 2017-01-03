@@ -77,7 +77,7 @@ function ENT:OnTakeDamage(dmginfo)
 	local dmg = dmginfo:GetDamage()
 	local ply = self:GetPlayerOwner()
 	
-	print(ply:Health(), dmg)
+	--print(ply:Health(), dmg)
 	
 	if IsValid(ply) and dmg > ply:Health() then
 		ply:SetPos(self:GetPos())

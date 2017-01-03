@@ -629,10 +629,13 @@ function SWEP:Push(ent, tr)
 			
 			if ent:IsPlayer() then
 				if not self.CanPushPlayers then return end
-				ent:SetGroundEntity(nil)
-				ent:SetVelocity(force*100)
+				ent:SetGroundEntity(NULL)
+				local z = math.Clamp(200 - force.z, 0, 200)
+				if force.z < 0 then force.z = 0 end
+				ent:SetVelocity(force*200 + Vector(0,0,z))
+			else
+				phys:ApplyForceOffset(force*math.Clamp(phys:GetMass(), 1, 1000)*300, pos)
 			end
-			phys:ApplyForceOffset(force*math.Clamp(phys:GetMass(), 1, 1000)*300, pos)
 		end
 	end
 end

@@ -14,16 +14,15 @@ end
 local soundthres = 40
 function GM:EntityTakeDamage(ply, dmginfo)
 	if not ply:IsPlayer() then return end
-	local pteam = ply:Team()
-	if pteam == 2 then return true end -- Only runner damage!
+	if ply:IsKiller() then return true end -- Only runner damage!
 	
 	local attacker = dmginfo:GetAttacker()
 	
 	if dmginfo:GetDamageType() == DMG_CRUSH then dmginfo:ScaleDamage(0.01) end
 	
 	local dmg = dmginfo:GetDamage()
-	if pteam == 1 then
-		if IsValid(ply.Clone) and not ply.CLONEDMG then
+	if ply:IsRunner() then
+		if IsValid(ply.CloneController) and not ply.CLONEDMG then
 			ply:EndClone(nil, true)
 			return true
 		elseif dmg >= ply:Health() and not ply.ConvertingToSkeleton then 
@@ -31,6 +30,7 @@ function GM:EntityTakeDamage(ply, dmginfo)
 			if IsValid(attacker) and attacker:IsPlayer() then
 				attacker:AddFrags(1)
 			end
+			return true
 		elseif dmg > soundthres then
 			ply.NextMoanSound = CurTime() + math.Rand(10,15)
 			ply:Scream()

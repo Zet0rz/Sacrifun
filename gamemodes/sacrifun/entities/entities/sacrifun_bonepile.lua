@@ -192,9 +192,11 @@ function ENT:Think()
 						rew:AddFrags(1)
 					end
 					ply:SetSkeleton()
-					ply.ConvertingToSkeleton = nil
 				end
+				ply.ConvertingToSkeleton = nil
 				ply:Spawn()
+				self:Remove()
+			else
 				self:Remove()
 			end
 			for k,v in pairs(self.Bones) do

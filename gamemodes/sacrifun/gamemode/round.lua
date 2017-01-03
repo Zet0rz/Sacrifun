@@ -55,6 +55,8 @@ if SERVER then
 			if CurTime() > time then
 				for k,v in pairs(team.GetPlayers(2)) do
 					v:Freeze(false)
+					local wep = v:GetActiveWeapon()
+					if IsValid(wep) then wep.WipeTime = 0 end
 				end
 				for k,v in pairs(team.GetPlayers(1)) do
 					v:RemoveProps()
@@ -108,7 +110,12 @@ if SERVER then
 	hook.Add("OnPlayerChangedTeam", "sfun_teamstatus", UpdatePlayerStatus)
 	hook.Add("sfun_UpdateTeamStatus", "sfun_teamstatus", UpdatePlayerStatus)
 	hook.Add("EntityRemoved", "sfun_teamstatus", function(ent)
-		if ent:IsPlayer() then UpdatePlayerStatus() end
+		if ent:IsPlayer() then
+			if IsValid(ent.BonePile) then
+				ent.BonePile:Remove()
+			end
+			UpdatePlayerStatus()
+		end
 	end)
 else
 

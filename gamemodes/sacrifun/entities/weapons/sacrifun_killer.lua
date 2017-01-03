@@ -45,6 +45,14 @@ function SWEP:DrawWorldModel()
 	self:DrawModel()
 end
 
+function SWEP:Initialize()
+
+	if SERVER then self:SetHoldType(self.HoldType) end
+	self.NextIdleTime = 0
+	--self.WipeTime = 0
+	
+end
+
 local hitdmg = 55
 local swingsound = Sound( "Weapon_Crowbar.Single" )
 local hitsound = Sound( "Weapon_Crowbar.Melee_Hit" )
