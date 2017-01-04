@@ -21,8 +21,8 @@ function PLAYER_RUNNER:SetupDataTables()
 	if SERVER then
 		self.Player:SetCarriedObject(nil)
 		self.Player:SetCarryingPlayer(nil)
-		self.Player:SetAdrenaline(0)
-		self.Player:SetCloneNumber(0)
+		self.Player:SetAdrenaline(100)
+		self.Player:SetCloneNumber(1)
 		self.Player:SetIsSensing(false)
 		self.Player:SetNoCollidePlayers(false)
 	end

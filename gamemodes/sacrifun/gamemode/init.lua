@@ -65,8 +65,8 @@ function GM:PlayerSpawn(ply)
 	-- Reset variables
 	ply:SetCarriedObject(nil)
 	ply:SetCarryingPlayer(nil)
-	ply:SetAdrenaline(0)
-	ply:SetCloneNumber(0)
+	ply:SetAdrenaline(100)
+	ply:SetCloneNumber(1)
 	ply:SetIsSensing(false)
 	ply.SenseCooldown = 1
 	ply:SensePing(nil, true) -- Don't show killer
