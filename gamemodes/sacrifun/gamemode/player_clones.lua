@@ -17,7 +17,7 @@ if SERVER then
 	util.AddNetworkString("sfun_cloneoverlay")
 	
 	function meta:ToggleClone(replace)
-		local clone = self.CloneController
+		local clone = self:GetCloneController()
 		if IsValid(clone) then
 			self:EndClone(replace)
 		else
@@ -40,7 +40,7 @@ if SERVER then
 		clone:SetAngles(Angle(0, clone.PlayerEyeAngles[2], 0))
 		clone:SetCloneOwner(self)
 		clone:Spawn()
-		self.CloneController = clone
+		--self:SetCloneController(clone)
 		
 		net.Start("sfun_cloneoverlay")
 			net.WriteBool(true)
@@ -48,7 +48,7 @@ if SERVER then
 	end
 	
 	function meta:EndClone(replace, kill)
-		local clone = self.CloneController
+		local clone = self:GetCloneController()
 		
 		if kill then
 			local e = EffectData()
@@ -67,13 +67,15 @@ if SERVER then
 			end)
 		end
 		clone:Remove()
-		self.CloneController = nil
+		self:SetCloneController(nil)
 		
 		local clonenum = self:GetCloneNumber()
 		if (kill or self:GetAdrenaline() <= 0) and clonenum > 0 then
 			self:SetCloneNumber(clonenum - 1)
 			if clonenum > 1 then
 				self:SetAdrenaline(100)
+			else
+				self:SetAdrenaline(0)
 			end
 		end
 	end

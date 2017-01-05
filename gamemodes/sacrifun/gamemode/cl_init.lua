@@ -94,14 +94,12 @@ local huds = {
 		
 		local shift, alt = ply:KeyDown(IN_SPEED), ply:KeyDown(IN_WALK)
 		local mat1, mat2, salpha, aalpha
-		local sna = 255
 		if shift then
 			mat1 = ab_tackle
 			mat2 = ab_pull
 			salpha = 255
 			if alt then
 				aalpha = 255
-				sna = 125
 			else
 				aalpha = 100
 			end			
@@ -133,7 +131,11 @@ local huds = {
 		surface.SetMaterial(m3)
 		surface.DrawTexturedRect(sw - 80, sh - 80, 50, 50)
 		
-		surface.SetDrawColor(255,sna,sna)
+		if ply.GetIsSensing and ply:GetIsSensing() then
+			surface.SetDrawColor(255,125,125)
+		else
+			surface.SetDrawColor(255,255,255)
+		end
 		surface.SetMaterial(icon_sense)
 		surface.DrawTexturedRect(sw - 515, sh - 140, 80, 80)
 		
@@ -262,7 +264,7 @@ hook.Add("CalcView", "sacrifun_View", function(ply, pos, angles, fov)
 	end
 end)
 hook.Add("CalcViewModelView", "sacrifun_View", function(wep, vm, opos, oang, pos, ang)
-	if ply:IsKiller() then
+	if LocalPlayer():IsKiller() then
 		return pos + add, ang
 	end
 end)

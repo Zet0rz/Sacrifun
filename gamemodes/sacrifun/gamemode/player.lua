@@ -105,18 +105,20 @@ if SERVER then
 		bp:BoneSetupForce(self:GetAimVector()*100)
 		--self.ConvertingToSkeleton = nil
 		self.BonePile = bp
+		
+		self:SetForcedSensing(false)
 	end
 	
 	util.AddNetworkString("sfun_PlayerStun")
 	function meta:Stun(time)
 		if self:IsSkeleton() then
-			local bp = ents.Create("sacrifun_bonepile")
+			--[[local bp = ents.Create("sacrifun_bonepile")
 			bp:SetPos(self:GetPos())
 			bp:SetAngles(self:GetAngles())
 			bp:Spawn()
 			bp:SetPlayer(self)
 			bp:SetRebuildDelay(5)
-			self.BonePile = bp
+			self.BonePile = bp]] -- Now handled in DoPlayerDeath
 			self:Kill()
 		elseif self:IsRunner() then -- Killers can't be stunned
 			local ct = CurTime()

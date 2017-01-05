@@ -22,12 +22,15 @@ function GM:EntityTakeDamage(ply, dmginfo)
 	
 	local dmg = dmginfo:GetDamage()
 	if ply:IsRunner() then
-		if IsValid(ply.CloneController) and not ply.CLONEDMG then
+		if IsValid(ply:GetCloneController()) and not ply.CLONEDMG then
 			ply:EndClone(nil, true)
 			return true
 		elseif dmg >= ply:Health() and not ply.ConvertingToSkeleton then 
 			ply:ConvertToSkeleton()
 			if IsValid(attacker) and attacker:IsPlayer() then
+				if attacker:IsKiller() then
+					hook.Run("Sacrifun_KillerKilledRunner", attacker, ply)
+				end
 				attacker:AddFrags(1)
 			end
 			return true
@@ -54,10 +57,10 @@ function GM:EntityTakeDamage(ply, dmginfo)
 end
 
 hook.Add("ShouldCollide", "sacrifun_clonecollide", function(e1, e2)
-	if e1:GetClass() == "sacrifun_clone" and e1:GetPlayerOwner() == e2 then
+	if e1:GetClass() == "sacrifun_clone" and e1.GetPlayerOwner and e1:GetPlayerOwner() == e2 then
 		return false
 	end
-	if e2:GetClass() == "sacrifun_clone" and e2:GetPlayerOwner() == e1 then
+	if e2:GetClass() == "sacrifun_clone" and e2.GetPlayerOwner and e2:GetPlayerOwner() == e1 then
 		return false
 	end
 	

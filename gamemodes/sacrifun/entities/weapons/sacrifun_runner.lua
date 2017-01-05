@@ -328,6 +328,7 @@ function SWEP:Think()
 					local ang = self.Owner:GetAngles() --+ self.CarryAng
 					self.CarriedPhys:UpdateShadow(pos, ang, FrameTime())]]
 				if IsValid(self.CarryHack) then
+					if self.CarriedPhys:IsAsleep() then self.CarriedPhys:Wake() end
 					self.CarryHack:SetPos(pos)
 					self.CarryHack:SetAngles(self.Owner:GetAngles())
 				else
@@ -387,7 +388,7 @@ function SWEP:Think()
 		end
 	end
 	
-	if IsFirstTimePredicted() and self.Sensing and self.NextSenseSteal < ct then
+	if self.Sensing and self.NextSenseSteal < ct then
 		self.Owner:AttemptHealthSteal()
 		self.NextSenseSteal = ct + 0.5
 	end
@@ -475,7 +476,7 @@ function SWEP:PickupObject(ent, sprint, tr)
 			local phys = ent:GetPhysicsObject()
 			
 			if allow then
-				time = time or 50
+				time = time or 0.5
 				if ent:IsPlayer() then
 					if issprinting and not IsValid(ent:GetCarryingPlayer()) and ent.GrabImmunity < CurTime() then --and ent:GetAimVector():Dot(self.Owner:GetAimVector()) > 0 then
 						self.Owner:SetCarriedObject(ent)
@@ -665,17 +666,22 @@ function SWEP:Tackle(ent, tr)
 				ent:Use(ply, ply, SIMPLE_USE, 1)
 				ent:SetKeyValue("speed", "1000")
 				ent.SlamShutTime = CurTime() + 0.5 -- Won't be openable for this amount of time!
-			elseif class == "func_breakable" then
-				ent:Fire("Break")
 			else
-				local phys = ent:GetPhysicsObject()
+				-- Break glass and apply force
+				self:FireBullets({
+					Damage = 0,
+					Force = 20,
+					Dir = self.Owner:GetAimVector(),
+					Src = self.Owner:GetShootPos()
+				})
+				--[[local phys = ent:GetPhysicsObject()
 				if IsValid(phys) then
 					local pos = tr.HitPos
 					local pos2 = self.Owner:GetShootPos()
 					
 					local force = (pos - pos2):GetNormalized()
 					phys:ApplyForceOffset(force*math.Clamp(phys:GetMass(), 1, 1000)*300, pos)
-				end
+				end]]
 			end
 		end
 	end

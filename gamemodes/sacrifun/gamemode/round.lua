@@ -1,6 +1,16 @@
 
 if SERVER then
+	local cvar_sense = CreateConVar("sfun_forced_sense_timer", 180, {FCVAR_SERVER_CAN_EXECUTE, FCVAR_NOTIFY, FCVAR_ARCHIVE}, "Sets how long time without a kill for the Runners to get forced to sense fast. Set to 0 to disable.")
+	local cvar_round = CreateConVar("sfun_killer_failed_time", 360, {FCVAR_SERVER_CAN_EXECUTE, FCVAR_NOTIFY, FCVAR_ARCHIVE}, "Sets how long without a kill will cause the remaining Runners to win. Set to 0 to disable.")
+	
 	local runnercount = 1
+	local roundrestarttime = 5
+	--local afkkillertime = 30 -- Timer after which an AFK killer will restart the round
+	
+	local forcetime
+	local roundovertime
+	local roundover
+	
 	function RoundRestart()
 		game.CleanUpMap()
 		
@@ -10,6 +20,8 @@ if SERVER then
 			local weight = v.KillerWeight or 1
 			tbl[v] = weight
 			total = total + weight
+			
+			v:SetForcedSensing(false) -- Reset this on round restart
 		end
 		
 		-- Weighted random, every time you're not a killer your weight increases by 1
@@ -32,10 +44,76 @@ if SERVER then
 			k:Spawn()
 		end
 		
+		forcetime = nil -- Disable it during the blindphase
+		roundovertime = nil -- Prevent accidental round overs during the blindphase
+		roundover = false
 		BlindPhase(20)
 	end
 
 	local isblind
+	
+	local function UpdateRoundTimes()
+		local ftime = cvar_sense:GetInt()
+		if ftime > 0 then
+			forcetime = CurTime() + ftime
+		else
+			forcetime = nil
+		end
+		
+		local rtime = cvar_round:GetInt()
+		if rtime > 0 then
+			roundovertime = CurTime() + rtime
+		else
+			roundovertime = nil
+		end
+	end
+	
+	local function UpdatePlayerStatus()
+		if roundover then return end
+		if team.NumPlayers(2) < 1 then
+			roundovertime = nil
+			forcetime = nil
+			
+			for k,v in pairs(team.GetPlayers(1)) do
+				v:Cheer()
+			end
+			PrintMessage(HUD_PRINTTALK, "The Killer rage quit! Everyone wins!")
+			roundover = true
+			
+			local time = CurTime() + roundrestarttime
+			hook.Add("Think", "sfun_roundover", function()
+				if CurTime() > time then
+					RoundRestart()
+					hook.Remove("Think", "sfun_roundover")
+				end
+			end)
+		else
+			local num = team.NumPlayers(1)
+			local min = runnercount > 1 and 1 or 0
+			if num <= min then
+				roundovertime = nil
+				forcetime = nil
+				
+				local ply = team.GetPlayers(1)[1]
+				if IsValid(ply) and not ply.ConvertingToSkeleton then
+					PrintMessage(HUD_PRINTTALK, ply:Nick() .. " was the last alive!")
+					ply:Cheer()
+				else
+					PrintMessage(HUD_PRINTTALK, "The Killer killed everyone! There were no winners!")
+				end
+				roundover = true
+				
+				local time = CurTime() + roundrestarttime
+				hook.Add("Think", "sfun_roundover", function()
+					if CurTime() > time then
+						RoundRestart()
+						hook.Remove("Think", "sfun_roundover")
+					end
+				end)
+			end
+		end
+	end
+	
 	util.AddNetworkString("sfun_Round")
 	function BlindPhase(time)
 		isblind = true
@@ -63,6 +141,9 @@ if SERVER then
 				end
 				hook.Remove("Think", "sfun_killerfreeze")
 				isblind = false
+				
+				UpdateRoundTimes()
+				UpdatePlayerStatus()
 			end
 		end)
 	end
@@ -71,42 +152,6 @@ if SERVER then
 		return isblind
 	end
 	
-	local function UpdatePlayerStatus()
-		if team.NumPlayers(2) < 1 then
-			for k,v in pairs(team.GetPlayers(1)) do
-				v:Cheer()
-			end
-			PrintMessage(HUD_PRINTTALK, "The killer rage quit! Everyone wins!")
-			
-			local time = CurTime() + 5
-			hook.Add("Think", "sfun_roundover", function()
-				if CurTime() > time then
-					RoundRestart()
-					hook.Remove("Think", "sfun_roundover")
-				end
-			end)
-		else
-			local num = team.NumPlayers(1)
-			local min = runnercount > 1 and 1 or 0
-			if num <= min then
-				local ply = team.GetPlayers(1)[1]
-				if IsValid(ply) and not ply.ConvertingToSkeleton then
-					PrintMessage(HUD_PRINTTALK, ply:Nick() .. " was the last alive!")
-					ply:Cheer()
-				else
-					PrintMessage(HUD_PRINTTALK, "The killer killed everyone! There were no winners!")
-				end
-				
-				local time = CurTime() + 5
-				hook.Add("Think", "sfun_roundover", function()
-					if CurTime() > time then
-						RoundRestart()
-						hook.Remove("Think", "sfun_roundover")
-					end
-				end)
-			end
-		end
-	end
 	hook.Add("OnPlayerChangedTeam", "sfun_teamstatus", UpdatePlayerStatus)
 	hook.Add("sfun_UpdateTeamStatus", "sfun_teamstatus", UpdatePlayerStatus)
 	hook.Add("EntityRemoved", "sfun_teamstatus", function(ent)
@@ -117,6 +162,41 @@ if SERVER then
 			UpdatePlayerStatus()
 		end
 	end)
+	
+	hook.Add("Think", "sfun_forcesensetimer", function()
+		local ct = CurTime()
+		if forcetime and forcetime < ct then
+			for k,v in pairs(team.GetPlayers(1)) do
+				v:SetForcedSensing(true)
+			end
+			forcetime = nil
+			PrintMessage(HUD_PRINTTALK, "The Killer is too slow! Runners are now forced to sense!")
+		end
+		if roundovertime and roundovertime < ct then
+			roundovertime = nil
+			forcetime = nil
+			
+			for k,v in pairs(team.GetPlayers(1)) do
+				v:Cheer()
+			end
+			PrintMessage(HUD_PRINTTALK, "The Killer failed to kill any more! The remaining Runners win!")
+			roundover = true
+			
+			local time = CurTime() + roundrestarttime
+			hook.Add("Think", "sfun_roundover", function()
+				if CurTime() > time then
+					RoundRestart()
+					hook.Remove("Think", "sfun_roundover")
+				end
+			end)
+		end
+	end)
+	
+	hook.Add("Sacrifun_KillerKilledRunner", "sfun_forcedsensetimedelay", function(killer, runner)
+		-- Every kill the killer gets while the timer is running resets it
+		UpdateRoundTimes()			
+	end)
+	
 else
 
 	local blindtime = 0

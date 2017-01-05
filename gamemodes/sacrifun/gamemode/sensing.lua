@@ -2,9 +2,9 @@
 --local sensekey = MOUSE_MIDDLE
 
 local cooldownspeed = 1/3 -- 1 every 3 seconds
-local cooldownspeedslow = 1/60 -- 1 ever 60 seconds
+local cooldownspeedslow = 1/40 -- 1 ever 60 seconds
 
-if SERVER then
+if SERVER then	
 	--[[hook.Add("PlayerButtonDown", "sacrifun_sense", function(ply, key)
 		if key == sensekey and not ply:GetIsSensing() and ply:GetAdrenaline() > 0 then
 			ply:StartSensing()
@@ -18,27 +18,29 @@ if SERVER then
 
 	hook.Add("Think", "sacrifun_sense", function()
 		for k,v in pairs(player.GetAll()) do
-			local sensecooldown = v.SenseCooldown or 0
-			
-			-- Forced sensing
-			if sensecooldown <= 0 then
-				v.SenseCooldown = 1
-				v:SensePing()
-			end
-			
-			if v:GetIsSensing() then
-				-- Only sensing on command
-				--[[if sensecooldown <= 0 then
+			if v:IsRunner() then
+				local sensecooldown = v.SenseCooldown or 0
+				
+				-- Forced sensing
+				if sensecooldown <= 0 then
 					v.SenseCooldown = 1
 					v:SensePing()
-					--v:AttemptHealthSteal()
-				end]]
-				if sensecooldown > 0 then
-					v.SenseCooldown = math.Clamp(sensecooldown - cooldownspeed*FrameTime(), 0, 1)
 				end
-			else
-				if sensecooldown > 0 then
-					v.SenseCooldown = math.Clamp(sensecooldown - cooldownspeedslow*FrameTime(), 0, 1)
+				
+				if v:GetIsSensing() then
+					-- Only sensing on command
+					--[[if sensecooldown <= 0 then
+						v.SenseCooldown = 1
+						v:SensePing()
+						--v:AttemptHealthSteal()
+					end]]
+					if sensecooldown > 0 then
+						v.SenseCooldown = math.Clamp(sensecooldown - cooldownspeed*FrameTime(), 0, 1)
+					end
+				else
+					if sensecooldown > 0 then
+						v.SenseCooldown = math.Clamp(sensecooldown - cooldownspeedslow*FrameTime(), 0, 1)
+					end
 				end
 			end
 		end
@@ -51,7 +53,7 @@ if SERVER then
 	end
 	
 	function meta:EndSensing()
-		if self.SetIsSensing then self:SetIsSensing(false) end
+		if self.SetIsSensing and not self.ForcedSensing then self:SetIsSensing(false) end
 	end
 	
 	util.AddNetworkString("sfun_SensePing")
@@ -72,6 +74,19 @@ if SERVER then
 				net.WriteBool(true)
 				net.WriteEntity(self)
 			net.Send(team.GetPlayers(2))
+		end
+	end
+	
+	function meta:SetForcedSensing(bool)
+		if not self.ForcedSensing and bool then
+			self:StartSensing()
+			self.ForcedSensing = true
+		elseif not bool then
+			self.ForcedSensing = false
+			local wep = self:GetActiveWeapon()
+			if not IsValid(wep) or not wep.Sensing then
+				self:EndSensing()
+			end
 		end
 	end
 else
@@ -112,6 +127,8 @@ else
 	local senseplys = {}
 	local sensetime = 5
 	
+	local clonecontrollers = {}
+	
 	net.Receive("sfun_SensePing", function()
 		LocalPlayer().SenseCooldown = 1
 		local tbl
@@ -148,8 +165,22 @@ else
 		end
 	end)
 	
+	net.Receive("sfun_PlayerCloneCreated", function()
+		if net.ReadBool() then
+			for k,v in pairs(clonecontrollers) do
+				if !IsValid(v) then
+					table.remove(clonecontrollers, k)
+				end
+			end
+		else
+			local ent = net.ReadEntity()
+			table.insert(clonecontrollers, ent)
+		end
+	end)
+	
 	hook.Add("PostDrawOpaqueRenderables", "sacrifun_senseping", function(ply)
 		local ct = CurTime()
+		local ply = LocalPlayer()
 		
 		cam.IgnoreZ(true)
 		render.SuppressEngineLighting( true )
@@ -165,8 +196,13 @@ else
 			end
 		end
 		
-		render.ModelMaterialOverride()
 		render.SetBlend(1)
+		if ply.GetCloneController and IsValid(ply:GetCloneController()) then
+			render.SetColorModulation(0, 0, 0.5)
+			ply:GetCloneController():DrawModel()
+		end
+		
+		render.ModelMaterialOverride()
 		render.SetColorModulation(1,1,1)
 		render.SuppressEngineLighting( false )
 		cam.IgnoreZ(false)

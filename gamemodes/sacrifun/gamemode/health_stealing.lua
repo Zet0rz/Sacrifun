@@ -72,8 +72,6 @@ function meta:AttemptHealthSteal()
 	
 	self:LagCompensation(false)
 	
-	debugoverlay.Cross(tr.HitPos, 5)
-	
 	if IsValid(tr.Entity) and tr.Entity:IsPlayer() then
 		if true then --if tr.Entity == self.HealthStealTarget then
 			--print("Hit", tr.Entity)

@@ -134,6 +134,15 @@ function GM:DoPlayerDeath(ply, attacker, dmginfo)
 			ply:ConvertToSkeleton()
 		end
 		ply:CreateRagdoll()
+	else
+		if IsValid(ply.BonePile) then ply.BonePile:Remove() end
+		local bp = ents.Create("sacrifun_bonepile")
+		bp:SetPos(ply:GetPos())
+		bp:SetAngles(ply:GetAngles())
+		bp:Spawn()
+		bp:SetPlayer(ply)
+		bp:SetRebuildDelay(5)
+		ply.BonePile = bp
 	end
 end
 

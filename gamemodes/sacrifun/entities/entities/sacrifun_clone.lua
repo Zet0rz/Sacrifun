@@ -30,6 +30,8 @@ function ENT:SetCloneOwner(ply)
 		self:SetModel(ply:GetModel())
 		self:SetPlayerOwner(ply)
 		self:CollisionRulesChanged()
+		
+		ply:SetCloneController(self)
 	end
 end
 
@@ -96,5 +98,7 @@ function ENT:OnRemove()
 		net.Start("sfun_cloneoverlay")
 			net.WriteBool(false)
 		net.Send(ply)
+		
+		ply:SetCloneController(nil)
 	end
 end

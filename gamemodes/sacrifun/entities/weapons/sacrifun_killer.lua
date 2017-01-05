@@ -93,7 +93,14 @@ function SWEP:PrimaryAttack()
 				ent:OnTakeDamage(d)
 				self.Owner:SlowDown(3)
 			else
-			
+				-- This breaks glass and/or pushes props
+				self:FireBullets({
+					Damage = 0,
+					Force = 10,
+					Dir = self.Owner:GetAimVector(),
+					Src = self.Owner:GetShootPos()
+				})
+				self.Owner:SlowDown(1)
 			end
 		end
 		

@@ -9,11 +9,12 @@ local killerwalk = 210
 local PLAYER_RUNNER = {}
 
 function PLAYER_RUNNER:SetupDataTables()
-
+	
 	self.Player:NetworkVar("Int", 0, "Adrenaline")
 	self.Player:NetworkVar("Int", 1, "CloneNumber")
 	self.Player:NetworkVar("Entity", 0, "CarryingPlayer")
 	self.Player:NetworkVar("Entity", 1, "CarriedObject")
+	self.Player:NetworkVar("Entity", 2, "CloneController")
 	self.Player:NetworkVar("Bool", 0, "IsSensing")
 	self.Player:NetworkVar("Bool", 1, "NoCollidePlayers")
 	
@@ -21,8 +22,9 @@ function PLAYER_RUNNER:SetupDataTables()
 	if SERVER then
 		self.Player:SetCarriedObject(nil)
 		self.Player:SetCarryingPlayer(nil)
-		self.Player:SetAdrenaline(100)
-		self.Player:SetCloneNumber(1)
+		self.Player:SetCloneController(nil)
+		self.Player:SetAdrenaline(0)
+		self.Player:SetCloneNumber(0)
 		self.Player:SetIsSensing(false)
 		self.Player:SetNoCollidePlayers(false)
 	end
@@ -113,12 +115,14 @@ function PLAYER_KILLER:SetupDataTables()
 	self.Player:NetworkVar("Int", 1, "CloneNumber")
 	self.Player:NetworkVar("Entity", 0, "CarryingPlayer")
 	self.Player:NetworkVar("Entity", 1, "CarriedObject")
+	self.Player:NetworkVar("Entity", 2, "CloneController")
 	self.Player:NetworkVar("Bool", 0, "IsSensing")
 	self.Player:NetworkVar("Bool", 1, "NoCollidePlayers")
 	
 	if SERVER then
 		self.Player:SetCarriedObject(nil)
 		self.Player:SetCarryingPlayer(nil)
+		self.Player:SetCloneController(nil)
 		self.Player:SetAdrenaline(0)
 		self.Player:SetCloneNumber(0)
 		self.Player:SetIsSensing(false)
@@ -183,12 +187,14 @@ function PLAYER_SKELETON:SetupDataTables()
 	self.Player:NetworkVar("Int", 1, "CloneNumber")
 	self.Player:NetworkVar("Entity", 0, "CarryingPlayer")
 	self.Player:NetworkVar("Entity", 1, "CarriedObject")
+	self.Player:NetworkVar("Entity", 2, "CloneController")
 	self.Player:NetworkVar("Bool", 0, "IsSensing")
 	self.Player:NetworkVar("Bool", 1, "NoCollidePlayers")
 	
 	if SERVER then
 		self.Player:SetCarriedObject(nil)
 		self.Player:SetCarryingPlayer(nil)
+		self.Player:SetCloneController(nil)
 		self.Player:SetAdrenaline(0)
 		self.Player:SetCloneNumber(0)
 		self.Player:SetIsSensing(false)
