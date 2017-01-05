@@ -136,3 +136,5 @@ function GM:DoPlayerDeath(ply, attacker, dmginfo)
 		ply:CreateRagdoll()
 	end
 end
+
+resource.AddWorkshop("821019109")

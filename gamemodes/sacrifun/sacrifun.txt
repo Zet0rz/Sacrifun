@@ -4,6 +4,7 @@ sacrifun
 	"title"		"Sacrifun"
 	"maps"		""
 	"menusystem"	"1"
+	"workshopid"	"821019109"
 	
 		"settings"
 	{
