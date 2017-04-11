@@ -15,6 +15,7 @@ if SERVER then
 	function meta:SetKiller()
 		self:SetTeam(2)
 		self:StripWeapons()
+		self:RemoveProps()
 		player_manager.SetPlayerClass( self, "sfun_playerclass_killer" )
 		player_manager.RunClass(self, "SetModel")
 		player_manager.RunClass(self, "Loadout")
@@ -25,6 +26,7 @@ if SERVER then
 	function meta:SetSkeleton()
 		self:SetTeam(3)
 		self:StripWeapons()
+		self:RemoveProps()
 		player_manager.SetPlayerClass( self, "sfun_playerclass_skeleton" )
 		player_manager.RunClass(self, "SetModel")
 		player_manager.RunClass(self, "Loadout")
@@ -65,7 +67,7 @@ if SERVER then
 	
 	util.AddNetworkString("sfun_PlayerSkeleton")
 	util.PrecacheModel("models/player/skeleton.mdl")
-	function meta:ConvertToSkeleton()
+	function meta:ConvertToSkeleton(attacker)
 		--if self:Alive() then self:Kill() end
 		
 		self.ConvertingToSkeleton = true
@@ -75,11 +77,18 @@ if SERVER then
 		
 		local d = DamageInfo()
 		d:SetDamage(self:Health())
-		d:SetAttacker(self)
+		d:SetAttacker(IsValid(attacker) and attacker or self)
 		d:SetDamageType(DMG_DISSOLVE)
 
 		self:TakeDamageInfo(d)
 		self:Shout()
+		
+		if IsValid(attacker) and attacker:IsPlayer() then
+			if attacker:IsKiller() then
+				hook.Run("Sacrifun_KillerKilledRunner", attacker, ply)
+			end
+			attacker:AddFrags(1)
+		end
 		
 		-- Triggers the skeleton dissolve effect clientside
 		--[[timer.Simple(0.1, function()
@@ -98,7 +107,7 @@ if SERVER then
 			filter = self
 		})
 		bp:PreBonePosAng(tr.Hit and tr.HitPos or self:GetPos() + vel + Vector(0,0,15), self:GetAngles())
-		bp:SetRebuildDelay(5)
+		bp:SetRebuildDelay(GetConVar("sfun_skeleton_rebuild_delay"):GetInt() or 5)
 		bp:SetBoneDropDelay(2)
 		bp:Spawn()
 		bp:SetPlayer(self)
@@ -110,16 +119,9 @@ if SERVER then
 	end
 	
 	util.AddNetworkString("sfun_PlayerStun")
-	function meta:Stun(time)
+	function meta:Stun(time, attacker)
 		if self:IsSkeleton() then
-			--[[local bp = ents.Create("sacrifun_bonepile")
-			bp:SetPos(self:GetPos())
-			bp:SetAngles(self:GetAngles())
-			bp:Spawn()
-			bp:SetPlayer(self)
-			bp:SetRebuildDelay(5)
-			self.BonePile = bp]] -- Now handled in DoPlayerDeath
-			self:Kill()
+			self:KillByPlayer(attacker)
 		elseif self:IsRunner() then -- Killers can't be stunned
 			local ct = CurTime()
 			time = time or 0.75
@@ -172,6 +174,13 @@ if SERVER then
 			net.WriteUInt(data, 4)
 			net.WriteEntity(self)
 		net.Broadcast()
+	end
+	
+	function meta:KillByPlayer(attacker)
+		local d = DamageInfo()
+		d:SetDamage(self:Health())
+		d:SetAttacker(IsValid(attacker) and attacker or self)
+		self:TakeDamageInfo(d)
 	end
 	
 else

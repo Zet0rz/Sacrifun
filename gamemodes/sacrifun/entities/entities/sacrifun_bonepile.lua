@@ -124,9 +124,11 @@ end
 
 function ENT:OnRemove()
 	if SERVER then
-		for k,v in pairs(self.Bones) do
-			if IsValid(v) then
-				v:Remove()
+		if self.Bones then
+			for k,v in pairs(self.Bones) do
+				if IsValid(v) then
+					v:Remove()
+				end
 			end
 		end
 	end
@@ -146,6 +148,7 @@ function ENT:Rebuild()
 	
 	self.RebuildDelay = nil
 	
+	if not self.Bones then self:DropBones() end
 	for k,v in pairs(self.Bones) do
 		if IsValid(v) then
 			v:SetNotSolid(true)
@@ -233,7 +236,7 @@ function ENT:Think()
 	if self.RebuildDelay and self.RebuildDelay < CurTime() then
 		self:Rebuild()
 	end
-	if self.BoneDropDelay and self.BoneDropDelay < CurTime() then
+	if self.BoneDropDelay and self.BoneDropDelay < CurTime() and not self.Rebuilding then
 		self:DropBones()
 	end
 end

@@ -86,7 +86,7 @@ function SWEP:PrimaryAttack()
 					self.Owner:SlowDown(3)
 					ent:TakeDamageInfo(d)
 				else
-					ent:Stun()
+					ent:Stun(nil, ply)
 					self.Owner:SlowDown(1)
 				end
 			elseif ent:GetClass() == "sacrifun_clone" then
@@ -150,27 +150,21 @@ function SWEP:SecondaryAttack()
 	
 	local ply = self.Owner
 	if !IsValid(self.CarriedObject) then
-		local sprint = ply:KeyDown(IN_SPEED) --and ply:GetVelocity():Length2D() > 100
-		local tr
 		self.Owner:LagCompensation(true)
-		if sprint then
-			tr = util.TraceHull( {
-				start = ply:GetShootPos(),
-				endpos = ply:GetShootPos() + ply:GetAimVector()*200,
-				filter = ply,
-				mins = Vector( -5, -5, -5 ),
-				maxs = Vector( 5, 5, 5 ),
-				mask = MASK_SHOT
-			} )
-		else
-			tr = util.QuickTrace(ply:EyePos(), ply:GetAimVector()*(sprint and 200 or 100), ply)
-		end
-		self.Owner:LagCompensation(true)
+		local tr = util.TraceHull( {
+			start = ply:GetShootPos(),
+			endpos = ply:GetShootPos() + ply:GetAimVector()*250,
+			filter = ply,
+			mins = Vector( -2, -2, -2 ),
+			maxs = Vector( 2, 2, 2 ),
+			mask = MASK_SHOT
+		})
+		self.Owner:LagCompensation(false)
 		if IsValid(tr.Entity) then
 			if secondaryacts[tr.Entity:GetClass()] then
-				secondaryacts[tr.Entity:GetClass()](ply, tr.Entity, sprint)
+				secondaryacts[tr.Entity:GetClass()](ply, tr.Entity, false)
 			else
-				self:PickupObject(tr.Entity, sprint, tr)
+				self:PickupObject(tr.Entity, false, tr)
 			end
 		end
 	end
@@ -211,6 +205,7 @@ function SWEP:Think()
 					local ang = self.Owner:GetAngles() --+ self.CarryAng
 					self.CarriedPhys:UpdateShadow(pos, ang, FrameTime())]]
 				if IsValid(self.CarryHack) then
+					if self.CarriedPhys:IsAsleep() then self.CarriedPhys:Wake() end
 					self.CarryHack:SetPos(pos)
 					self.CarryHack:SetAngles(self.Owner:GetAngles())
 				else
@@ -330,7 +325,14 @@ function SWEP:ReleaseObject()
 		
 		if IsValid(phys) then
 			phys:Wake()
-			timer.Simple(0, function() if IsValid(ent) and IsValid(phys) and ent.OldMass then phys:SetMass(ent.OldMass) end end)
+			local vel = phys:GetVelocity()*0.35
+			timer.Simple(0, function() 
+				if IsValid(ent) and IsValid(phys) and ent.OldMass then
+					--local vel = phys:GetVelocity()
+					phys:SetMass(ent.OldMass)
+					phys:SetVelocity(vel)
+				end
+			end)
 		end
 		
 		if ent.OnDropped then ent:OnDropped(self.Owner) end

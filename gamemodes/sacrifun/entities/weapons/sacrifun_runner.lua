@@ -592,7 +592,14 @@ function SWEP:ReleaseObject()
 			
 			if IsValid(phys) then
 				phys:Wake()
-				timer.Simple(0, function() if IsValid(ent) and IsValid(phys) and ent.OldMass then phys:SetMass(ent.OldMass) end end)
+				local vel = phys:GetVelocity()*0.35
+				timer.Simple(0, function() 
+					if IsValid(ent) and IsValid(phys) and ent.OldMass then
+						--local vel = phys:GetVelocity()
+						phys:SetMass(ent.OldMass)
+						phys:SetVelocity(vel)
+					end
+				end)
 			end
 			
 			if ent.OnDropped then ent:OnDropped(self.Owner) end
@@ -660,7 +667,7 @@ function SWEP:Tackle(ent, tr)
 			local class = ent:GetClass()
 			if ent:IsPlayer() then
 				if self.CanTacklePlayers and not ent:IsKiller() and ent.StunImmunity < CurTime() then
-					ent:Stun(3)
+					ent:Stun(3, self.Owner)
 				end
 			elseif class == "prop_door_rotating" then
 				ent:Use(ply, ply, SIMPLE_USE, 1)

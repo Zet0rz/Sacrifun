@@ -7,6 +7,7 @@ include("player_clones.lua")
 include("round.lua")
 include("blinding.lua")
 include("blindphase_props.lua")
+include("cl_scoreboard.lua")
 
 local color_health = Color(255,125,125)
 local color_clones = Color(100,220,100)
@@ -160,13 +161,13 @@ local huds = {
 		
 		surface.SetDrawColor(50,50,50,150)
 		surface.SetMaterial(mat_bar)
-		surface.DrawTexturedRectUV(165, sh - 95, 350, 20, 0, 0, 1, 1)
+		surface.DrawTexturedRectUV(165, sh - 85, 420, 20, 0, 0, 1, 1)
 		
 		surface.SetDrawColor(255,125,125)
-		surface.DrawTexturedRectUV(161, sh - 93, 350*healthpct, 16, 1-healthpct, 0.1, 1, 0.9)		
+		surface.DrawTexturedRectUV(161, sh - 83, 420*healthpct, 16, 1-healthpct, 0.1, 1, 0.9)	
 		
 		draw.RoundedBox(16, 50, sh - 170, 120, 120, color_health)
-		draw.RoundedBox(16, 180, sh - 160, 60, 60, color_sense)
+		draw.RoundedBox(16, 180, sh - 150, 60, 60, color_sense)
 		
 		surface.SetDrawColor(255,255,255)
 		
@@ -174,9 +175,9 @@ local huds = {
 		surface.DrawTexturedRect(50, sh - 170, 120, 120)
 		
 		surface.SetMaterial(icon_runner)
-		surface.DrawTexturedRect(180, sh - 160, 60, 60)
+		surface.DrawTexturedRect(180, sh - 150, 60, 60)
 		
-		draw.SimpleTextOutlined("x"..numrunners, "DermaLarge", 230, sh-110, color_white, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 2, color_black)
+		draw.SimpleTextOutlined("x"..numrunners, "DermaLarge", 230, sh-100, color_white, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 2, color_black)
 	end,
 	[3] = function()
 		local ply = LocalPlayer()
@@ -230,6 +231,19 @@ local huds = {
 		surface.SetMaterial(ks)
 		surface.SetDrawColor(255,255,255,salpha)
 		surface.DrawTexturedRect(sw - 300, sh - 80, 90, 50)
+		
+		
+		local numrunners = team.NumPlayers(1)
+		draw.RoundedBox(16, 180, sh - 150, 60, 60, color_sense)
+		surface.SetMaterial(icon_runner)
+		surface.SetDrawColor(255,255,255)
+		surface.DrawTexturedRect(180, sh - 150, 60, 60)
+		
+		draw.SimpleTextOutlined("x"..numrunners, "DermaLarge", 230, sh-100, color_white, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 2, color_black)
+		
+		if not ply:Alive() then
+			draw.SimpleTextOutlined("(If you are stuck, type 'kill' into console while rebuilding to respawn normally)", "TargetID", sw/2, sh-200, color_white, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 2, color_black)
+		end
 	end,
 }
 

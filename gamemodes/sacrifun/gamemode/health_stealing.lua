@@ -47,7 +47,6 @@ function meta:StealHealth(ply, amount)
 	self.NextHealthSteal = ct + cooldown -- Cooldown (on the guy who initialized)
 	self.HealthStealImmunity = ct + immunity -- Can't be re-stolen from for this time
 	self.HealthStealTarget = nil
-	-- TODO: Fancy effect
 	
 	local ef = EffectData()
 	ef:SetOrigin(from:GetPos())

@@ -2,6 +2,7 @@
 if SERVER then
 	local cvar_sense = CreateConVar("sfun_forced_sense_timer", 180, {FCVAR_SERVER_CAN_EXECUTE, FCVAR_NOTIFY, FCVAR_ARCHIVE}, "Sets how long time without a kill for the Runners to get forced to sense fast. Set to 0 to disable.")
 	local cvar_round = CreateConVar("sfun_killer_failed_time", 360, {FCVAR_SERVER_CAN_EXECUTE, FCVAR_NOTIFY, FCVAR_ARCHIVE}, "Sets how long without a kill will cause the remaining Runners to win. Set to 0 to disable.")
+	local cvar_killercount = CreateConVar("sfun_killer_amount", 1, {FCVAR_SERVER_CAN_EXECUTE, FCVAR_NOTIFY}, "Sets how many players will become Killers each round.")
 	
 	local runnercount = 1
 	local roundrestarttime = 5
@@ -25,22 +26,31 @@ if SERVER then
 		end
 		
 		-- Weighted random, every time you're not a killer your weight increases by 1
-		local cur = 0
-		local killer = false
-		local ran = math.random(0,total)
+		local killercount = math.Clamp(cvar_killercount:GetInt(), 1, #player.GetAll()-1)
+		
+		-- Iterate this many times, removing from the table every time
+		for i = 1, cvar_killercount:GetInt() do
+			local cur = 0
+			local ran = math.random(0,total)
+			
+			for k,v in pairs(tbl) do
+				cur = cur + v
+				if cur >= ran then
+					k:SetKiller()
+					k.KillerWeight = 1
+					k:Spawn()
+					total = total - v -- Subtract from the total
+					tbl[k] = nil -- And remove from the table
+					break -- Next loop has a lower total and not looping this person
+				end
+			end
+		end
+		
 		runnercount = 0
 		for k,v in pairs(tbl) do
-			cur = cur + v
-			if cur >= ran and not killer then
-				k:SetKiller()
-				k.KillerWeight = 1
-				killer = true
-			else
-				k:SetRunner()
-				runnercount = runnercount + 1
-				k.KillerWeight = k.KillerWeight and k.KillerWeight + 1 or 1
-			end
-			
+			k:SetRunner()
+			runnercount = runnercount + 1
+			k.KillerWeight = k.KillerWeight and k.KillerWeight + 1 or 1
 			k:Spawn()
 		end
 		

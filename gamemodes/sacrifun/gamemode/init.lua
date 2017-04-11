@@ -8,6 +8,7 @@ AddCSLuaFile("player_clones.lua")
 AddCSLuaFile("round.lua")
 AddCSLuaFile("blinding.lua")
 AddCSLuaFile("blindphase_props.lua")
+AddCSLuaFile("cl_scoreboard.lua")
 
 include("shared.lua")
 include("playerclass.lua")
@@ -21,6 +22,8 @@ include("blinding.lua")
 include("blindphase_props.lua")
 include("anti_stuck.lua")
 include("health_stealing.lua")
+
+local cvar_rebuilddelay = CreateConVar("sfun_skeleton_rebuild_delay", 5, {FCVAR_SERVER_CAN_EXECUTE, FCVAR_NOTIFY}, "Sets how long it takes Skeletons to rebuild after being killed.")
 
 function GM:GetFallDamage(ply, speed)
 	if IsValid(ply:GetCarryingPlayer()) or ply.GrabImmunity > CurTime() then
@@ -40,7 +43,7 @@ end
 function GM:PlayerSpawn(ply)
 	ply:SetupHands()
 	
-	if ply:Team() == 3 then
+	if ply:IsSkeleton() then
 		--[[net.Start("sfun_PlayerSkeleton")
 			net.WriteEntity(ply)
 			net.WriteBool(false)
@@ -110,7 +113,7 @@ function GM:CanPlayerSuicide(ply)
 		end
 		ply:Stun()
 		return false
-	elseif ply:IsRunner() then
+	elseif ply:IsRunner() and not ply.ConvertingToSkeleton then
 		ply:ConvertToSkeleton()
 		return false
 	else
@@ -124,14 +127,12 @@ function GM:DoPlayerDeath(ply, attacker, dmginfo)
 	if IsValid(attacker) and attacker:IsPlayer() then
 		if ( attacker == ply ) then
 			attacker:AddFrags(-1)
-		else
-			attacker:AddFrags(1)
 		end
 	end
 	
 	if not ply:IsSkeleton() then
 		if not ply.ConvertingToSkeleton then -- Fallback, sometimes you don't convert
-			ply:ConvertToSkeleton()
+			ply:ConvertToSkeleton(attacker)
 		end
 		ply:CreateRagdoll()
 	else
@@ -141,9 +142,13 @@ function GM:DoPlayerDeath(ply, attacker, dmginfo)
 		bp:SetAngles(ply:GetAngles())
 		bp:Spawn()
 		bp:SetPlayer(ply)
-		bp:SetRebuildDelay(5)
+		bp:SetRebuildDelay(cvar_rebuilddelay:GetInt())
 		ply.BonePile = bp
 	end
+end
+
+function GM:PlayerCanHearPlayersVoice(listener, talker)
+	return true
 end
 
 resource.AddWorkshop("821019109")

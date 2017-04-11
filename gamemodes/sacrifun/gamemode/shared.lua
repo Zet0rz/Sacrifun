@@ -5,7 +5,7 @@ GM.Website = "https://youtube.com/Zet0r"
 
 team.SetUp(1, "Runners", Color(100,125,255), true)
 team.SetUp(2, "Killer", Color(255,75,75), true)
-team.SetUp(3, "Skeletons", Color(255,150,150), true)
+team.SetUp(3, "Skeletons", Color(150,150,150), true)
 
 function GM:PlayerSwitchFlashlight(ply, SwitchOn)
      return true
@@ -25,14 +25,8 @@ function GM:EntityTakeDamage(ply, dmginfo)
 		if IsValid(ply:GetCloneController()) and not ply.CLONEDMG then
 			ply:EndClone(nil, true)
 			return true
-		elseif dmg >= ply:Health() and not ply.ConvertingToSkeleton then 
-			ply:ConvertToSkeleton()
-			if IsValid(attacker) and attacker:IsPlayer() then
-				if attacker:IsKiller() then
-					hook.Run("Sacrifun_KillerKilledRunner", attacker, ply)
-				end
-				attacker:AddFrags(1)
-			end
+		elseif dmg >= ply:Health() and not ply.ConvertingToSkeleton then
+			ply:ConvertToSkeleton(attacker)
 			return true
 		elseif dmg > soundthres then
 			ply.NextMoanSound = CurTime() + math.Rand(10,15)

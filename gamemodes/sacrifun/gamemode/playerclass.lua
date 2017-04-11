@@ -132,7 +132,8 @@ function PLAYER_KILLER:SetupDataTables()
 end
 
 function PLAYER_KILLER:SetModel()
-	self.Player:SetModel( playermodels[math.random(table.Count(playermodels))] )
+	--self.Player:SetModel( playermodels[math.random(table.Count(playermodels))] )
+	self.Player:SetModel("models/player/group01/male_07.mdl")
 	self.Player:SetPlayerColor(Vector(1,0,0))
 end
 
